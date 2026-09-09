@@ -1,0 +1,11 @@
+# Justificativa tecnica da producao audiovisual
+
+O personagem foi implementado como um sprite 2D animado por troca sequencial de frames. A sprite sheet consolidada organiza oito conjuntos de movimentacao: Idle, Walk, Run, Jump, Punch, Power, Hurt e Dead. Cada linha representa uma acao do personagem e cada coluna corresponde a um frame da animacao, permitindo visualizar a variedade de movimentos exigida na etapa audiovisual. Os frames originais foram mantidos separados no projeto para facilitar a importacao como sprites individuais e a montagem dos Animation Clips dentro da Unity.
+
+No Animator, cada movimentacao foi configurada como um estado proprio. As animacoes Idle, Walk, Run e Power foram marcadas como ciclos em loop, pois representam acoes continuas. Ja Jump, Punch, Hurt e Dead foram configuradas como acoes pontuais, por terem inicio, desenvolvimento e fim bem definidos. O controle das transicoes usa o parametro inteiro `State`, permitindo alternar entre os estados durante a demonstracao sem depender de entrada manual.
+
+A trilha sonora `BeepBox-Song.mp3` foi composta como um tema original em loop, usando melodia sintetizada, camada grave e pulso ritmico. A proposta sonora combina energia de acao com uma atmosfera de personagem de jogo 2D, reforcando a sensacao de movimento, combate e poder especial. Como o arquivo foi produzido especificamente para este personagem, ele atende ao criterio de exclusividade da entrega.
+
+Na cena demonstrativa `CharacterDemoScene`, o personagem recebe os componentes `SpriteRenderer`, `Animator`, `AudioSource` e `CharacterDemoController`. O `SpriteRenderer` exibe os frames, o `Animator` executa os Animation Clips, o `AudioSource` toca a trilha em loop e o controlador de demonstracao alterna automaticamente entre as oito acoes. Durante Walk, Run e Jump tambem ha deslocamento visual do objeto, para evidenciar melhor a integracao entre animacao e movimento dentro do motor.
+
+Essa organizacao atende aos criterios da atividade porque apresenta mais de seis movimentacoes distintas, usa uma trilha original coerente com um personagem de acao e deixa a integracao pronta dentro da Unity para gravacao do video demonstrativo com audio.
