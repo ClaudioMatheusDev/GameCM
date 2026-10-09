@@ -1,17 +1,28 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class CharacterDemoController : MonoBehaviour
 {
-    [SerializeField] private Animator animator;
-    [SerializeField] private AudioSource themeSource;
+    [SerializeField] private Animator animator = null;
+    [SerializeField] private AudioSource themeSource = null;
+    [SerializeField] private SpriteRenderer stageBackground = null;
+    [SerializeField] private Sprite[] stageBackgrounds = null;
+    [SerializeField] private float backgroundZoom = 1f;
     [SerializeField] private string[] stateNames = { "Idle", "Walk", "Run", "Jump", "Punch", "Power", "Hurt", "Dead" };
-    [SerializeField] private float secondsPerState = 1.35f;
-    [SerializeField] private float moveDistance = 1.4f;
+    [SerializeField] private float horizontalSpeed = 5f;
+    [SerializeField] private float stageStartX = -10.5f;
+    [SerializeField] private float stageEndX = 10.5f;
+    [SerializeField] private float jumpDuration = 0.55f;
     [SerializeField] private float jumpHeight = 1.15f;
+    [SerializeField] private float punchDuration = 0.6f;
+    [SerializeField] private float powerDuration = 0.7f;
 
-    private Vector3 startPosition;
-    private float timer;
-    private int stateIndex;
+    private float groundY;
+    private float jumpTimer;
+    private float attackTimer;
+    private int stageIndex;
+    private string activeAttackState;
+    private Camera stageCamera;
 
     private void Awake()
     {
@@ -20,11 +31,39 @@ public class CharacterDemoController : MonoBehaviour
             animator = GetComponent<Animator>();
         }
 
-        startPosition = transform.position;
+        groundY = transform.position.y;
+        jumpTimer = jumpDuration;
     }
 
     private void Start()
     {
+        if (stageBackground == null || stageBackgrounds == null || stageBackgrounds.Length != 4)
+        {
+            Debug.LogError("Character Demo precisa de um SpriteRenderer de fundo e dos quatro sprites de fase.", this);
+            enabled = false;
+            return;
+        }
+
+        stageCamera = Camera.main;
+        if (stageCamera == null || !stageCamera.orthographic)
+        {
+            Debug.LogError("Character Demo precisa de uma camera principal ortografica para ajustar os fundos.", this);
+            enabled = false;
+            return;
+        }
+
+        for (int i = 0; i < stageBackgrounds.Length; i++)
+        {
+            if (stageBackgrounds[i] == null)
+            {
+                Debug.LogError("O sprite de fundo da fase " + (i + 1) + " nao foi atribuido.", this);
+                enabled = false;
+                return;
+            }
+        }
+
+        SetStageBackground(stageBackgrounds[stageIndex]);
+
         if (themeSource != null && themeSource.clip != null)
         {
             themeSource.loop = true;
@@ -32,55 +71,119 @@ public class CharacterDemoController : MonoBehaviour
             themeSource.Play();
         }
 
-        ApplyState(0);
+        ApplyState("Idle");
     }
 
     private void Update()
     {
-        if (stateNames == null || stateNames.Length == 0)
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null)
         {
             return;
         }
 
-        timer += Time.deltaTime;
-        if (timer >= secondsPerState)
+        float direction = 0f;
+        if (keyboard.aKey.isPressed)
         {
-            timer = 0f;
-            stateIndex = (stateIndex + 1) % stateNames.Length;
-            ApplyState(stateIndex);
+            direction -= 1f;
         }
 
-        PreviewMotion();
-    }
-
-    private void ApplyState(int index)
-    {
-        if (animator == null)
+        if (keyboard.dKey.isPressed)
         {
-            return;
+            direction += 1f;
         }
 
-        animator.SetInteger("State", index);
-    }
-
-    private void PreviewMotion()
-    {
-        float phase = Mathf.Clamp01(timer / secondsPerState);
-        Vector3 position = startPosition;
-
-        if (stateNames[stateIndex] == "Walk")
+        if (keyboard.spaceKey.wasPressedThisFrame && jumpTimer >= jumpDuration)
         {
-            position.x += Mathf.Lerp(-moveDistance, moveDistance, phase);
+            jumpTimer = 0f;
         }
-        else if (stateNames[stateIndex] == "Run")
+
+        if (attackTimer <= 0f)
         {
-            position.x += Mathf.Lerp(moveDistance, -moveDistance, phase);
+            if (keyboard.kKey.wasPressedThisFrame)
+            {
+                StartAttack("Power", powerDuration);
+            }
+            else if (keyboard.jKey.wasPressedThisFrame)
+            {
+                StartAttack("Punch", punchDuration);
+            }
         }
-        else if (stateNames[stateIndex] == "Jump")
+
+        Vector3 position = transform.position;
+        position.x = Mathf.Clamp(
+            position.x + direction * horizontalSpeed * Time.deltaTime,
+            stageStartX,
+            stageEndX);
+
+        bool isJumping = jumpTimer < jumpDuration;
+        if (isJumping)
         {
-            position.y += Mathf.Sin(phase * Mathf.PI) * jumpHeight;
+            jumpTimer = Mathf.Min(jumpTimer + Time.deltaTime, jumpDuration);
+            float jumpPhase = jumpTimer / jumpDuration;
+            position.y = groundY + Mathf.Sin(jumpPhase * Mathf.PI) * jumpHeight;
+        }
+        else
+        {
+            position.y = groundY;
         }
 
         transform.position = position;
+
+        if (position.x >= stageEndX && stageIndex < stageBackgrounds.Length - 1)
+        {
+            AdvanceStage(position);
+        }
+
+        if (attackTimer > 0f)
+        {
+            ApplyState(activeAttackState);
+            attackTimer = Mathf.Max(0f, attackTimer - Time.deltaTime);
+            return;
+        }
+
+        ApplyState(isJumping ? "Jump" : direction == 0f ? "Idle" : "Walk");
+    }
+
+    private void StartAttack(string stateName, float duration)
+    {
+        activeAttackState = stateName;
+        attackTimer = duration;
+    }
+
+    private void AdvanceStage(Vector3 position)
+    {
+        stageIndex++;
+        SetStageBackground(stageBackgrounds[stageIndex]);
+        position.x = stageStartX;
+        transform.position = position;
+    }
+
+    private void SetStageBackground(Sprite background)
+    {
+        stageBackground.sprite = background;
+        float targetHeight = stageCamera.orthographicSize * 2f * backgroundZoom;
+        float scale = targetHeight / background.bounds.size.y;
+        Vector3 localScale = stageBackground.transform.localScale;
+        localScale.x = scale;
+        localScale.y = scale;
+        stageBackground.transform.localScale = localScale;
+    }
+
+    private void ApplyState(string stateName)
+    {
+        if (animator == null || stateNames == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < stateNames.Length; i++)
+        {
+            if (stateNames[i] == stateName)
+            {
+                animator.SetInteger("State", i);
+                return;
+            }
+        }
     }
 }

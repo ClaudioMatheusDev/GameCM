@@ -16,8 +16,17 @@ public static class BuildCharacterDemoAssets
     private const string AudioRoot = GeneratedRoot + "/Audio";
     private const string ThemeAudioPath = AudioRoot + "/BeepBox-Song.mp3";
     private const string SceneRoot = "Assets/Scenes";
+    private const string BackgroundRoot = "Assets/Fundos";
     private const float PixelsPerUnit = 128f;
+    private const float BackgroundPixelsPerUnit = 50f;
     private const int SpriteSheetCellSize = 256;
+    private static readonly string[] BackgroundPaths =
+    {
+        BackgroundRoot + "/Init_cenario.jpg",
+        BackgroundRoot + "/Seconde_cenario.jpg",
+        BackgroundRoot + "/Thirt_Cenario.jpg",
+        BackgroundRoot + "/four_cenario.jpg"
+    };
 
     private static readonly MoveSet[] Moves =
     {
@@ -26,7 +35,7 @@ public static class BuildCharacterDemoAssets
         new("Run", "Run", 9, 12f, true),
         new("Jump", "Jump", 5, 8f, false),
         new("Punch", "punch", 8, 14f, false),
-        new("Power", "Power/pixilart-frames", 6, 10f, true),
+        new("Power", "Power/pixilart-frames", 6, 10f, false),
         new("Hurt", "hurt", 5, 10f, false),
         new("Dead", "Dead", 6, 7f, false),
     };
@@ -40,12 +49,14 @@ public static class BuildCharacterDemoAssets
         Directory.CreateDirectory(SceneRoot);
 
         ConfigureSourceSprites();
+        ConfigureBackgroundSprites();
         CreateSpriteSheet();
         AssetDatabase.Refresh();
 
         AnimatorController controller = CreateAnimationsAndController();
         AudioClip theme = LoadThemeAudio();
-        CreateDemoScene(controller, theme);
+        Sprite[] backgrounds = LoadBackgroundSprites();
+        CreateDemoScene(controller, theme, backgrounds);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -127,6 +138,52 @@ public static class BuildCharacterDemoAssets
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.SaveAndReimport();
         }
+    }
+
+    private static void ConfigureBackgroundSprites()
+    {
+        foreach (string path in BackgroundPaths)
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+            {
+                throw new FileNotFoundException("Imagem de fundo nao encontrada.", path);
+            }
+
+            bool changed = importer.textureType != TextureImporterType.Sprite
+                || importer.spriteImportMode != SpriteImportMode.Multiple
+                || !Mathf.Approximately(importer.spritePixelsPerUnit, BackgroundPixelsPerUnit)
+                || importer.filterMode != FilterMode.Point
+                || importer.textureCompression != TextureImporterCompression.Uncompressed;
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Multiple;
+            importer.spritePixelsPerUnit = BackgroundPixelsPerUnit;
+            importer.filterMode = FilterMode.Point;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+
+            if (changed)
+            {
+                importer.SaveAndReimport();
+            }
+        }
+    }
+
+    private static Sprite[] LoadBackgroundSprites()
+    {
+        Sprite[] backgrounds = new Sprite[BackgroundPaths.Length];
+        for (int i = 0; i < BackgroundPaths.Length; i++)
+        {
+            backgrounds[i] = AssetDatabase.LoadAllAssetsAtPath(BackgroundPaths[i])
+                .OfType<Sprite>()
+                .FirstOrDefault();
+            if (backgrounds[i] == null)
+            {
+                throw new InvalidDataException("A imagem nao foi importada como sprite: " + BackgroundPaths[i]);
+            }
+        }
+
+        return backgrounds;
     }
 
     private static AnimatorController CreateAnimationsAndController()
@@ -223,7 +280,7 @@ public static class BuildCharacterDemoAssets
         return theme;
     }
 
-    private static void CreateDemoScene(AnimatorController controller, AudioClip theme)
+    private static void CreateDemoScene(AnimatorController controller, AudioClip theme, Sprite[] backgrounds)
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "CharacterDemoScene";
@@ -236,8 +293,16 @@ public static class BuildCharacterDemoAssets
         camera.backgroundColor = new Color(0.10f, 0.14f, 0.18f);
         camera.gameObject.AddComponent<AudioListener>();
 
+        GameObject backgroundObject = new GameObject("Stage Background");
+        SpriteRenderer backgroundRenderer = backgroundObject.AddComponent<SpriteRenderer>();
+        backgroundRenderer.sprite = backgrounds[0];
+        backgroundRenderer.sortingOrder = -100;
+        float backgroundScale = camera.orthographicSize * 2f / backgroundRenderer.sprite.bounds.size.y;
+        backgroundObject.transform.localScale = Vector3.one * backgroundScale;
+        backgroundObject.transform.position = new Vector3(0f, 0f, 1f);
+
         GameObject character = new GameObject("Character Demo");
-        character.transform.position = Vector3.zero;
+        character.transform.position = new Vector3(-10.5f, -2f, 0f);
 
         SpriteRenderer renderer = character.AddComponent<SpriteRenderer>();
         renderer.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(GetFramePaths(Moves[0]).First());
@@ -256,28 +321,16 @@ public static class BuildCharacterDemoAssets
         SerializedObject serializedDemo = new SerializedObject(demo);
         serializedDemo.FindProperty("animator").objectReferenceValue = animator;
         serializedDemo.FindProperty("themeSource").objectReferenceValue = audio;
+        serializedDemo.FindProperty("stageBackground").objectReferenceValue = backgroundRenderer;
+        SerializedProperty backgroundArray = serializedDemo.FindProperty("stageBackgrounds");
+        backgroundArray.arraySize = backgrounds.Length;
+        for (int i = 0; i < backgrounds.Length; i++)
+        {
+            backgroundArray.GetArrayElementAtIndex(i).objectReferenceValue = backgrounds[i];
+        }
         serializedDemo.ApplyModifiedProperties();
 
-        CreateGround();
         EditorSceneManager.SaveScene(scene, SceneRoot + "/CharacterDemoScene.unity");
-    }
-
-    private static void CreateGround()
-    {
-        GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        ground.name = "Demo Ground";
-        ground.transform.position = new Vector3(0f, -2.15f, 0f);
-        ground.transform.localScale = new Vector3(8f, 0.12f, 1f);
-        UnityEngine.Object.DestroyImmediate(ground.GetComponent<BoxCollider>());
-
-        Renderer renderer = ground.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            renderer.sharedMaterial = new Material(Shader.Find("Sprites/Default"))
-            {
-                color = new Color(0.18f, 0.23f, 0.25f)
-            };
-        }
     }
 
     private static IEnumerable<string> GetFramePaths(MoveSet move)
