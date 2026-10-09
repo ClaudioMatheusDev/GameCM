@@ -17,8 +17,11 @@ public static class BuildCharacterDemoAssets
     private const string ThemeAudioPath = AudioRoot + "/BeepBox-Song.mp3";
     private const string SceneRoot = "Assets/Scenes";
     private const string BackgroundRoot = "Assets/Fundos";
+    private const string ZombieRoot = "Assets/Zombie";
+    private const string ZombieWalkRoot = ZombieRoot + "/walk_left";
     private const float PixelsPerUnit = 128f;
     private const float BackgroundPixelsPerUnit = 50f;
+    private const float ZombiePixelsPerUnit = 100f;
     private const int SpriteSheetCellSize = 256;
     private static readonly string[] BackgroundPaths =
     {
@@ -50,13 +53,15 @@ public static class BuildCharacterDemoAssets
 
         ConfigureSourceSprites();
         ConfigureBackgroundSprites();
+        ConfigureZombieSprites();
         CreateSpriteSheet();
         AssetDatabase.Refresh();
 
         AnimatorController controller = CreateAnimationsAndController();
         AudioClip theme = LoadThemeAudio();
         Sprite[] backgrounds = LoadBackgroundSprites();
-        CreateDemoScene(controller, theme, backgrounds);
+        Sprite[] zombieFrames = LoadZombieWalkFrames();
+        CreateDemoScene(controller, theme, backgrounds, zombieFrames);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -186,6 +191,69 @@ public static class BuildCharacterDemoAssets
         return backgrounds;
     }
 
+    private static IEnumerable<string> GetZombieWalkPaths()
+    {
+        if (!Directory.Exists(ZombieWalkRoot))
+        {
+            throw new DirectoryNotFoundException("Pasta de sprites do zumbi nao encontrada: " + ZombieWalkRoot);
+        }
+
+        string[] paths = Directory.GetFiles(ZombieWalkRoot, "*.png")
+            .OrderBy(path => int.TryParse(Path.GetFileNameWithoutExtension(path), out int frame)
+                ? frame
+                : int.MaxValue)
+            .ToArray();
+
+        if (paths.Length == 0)
+        {
+            throw new FileNotFoundException("Nenhum quadro de caminhada do zumbi foi encontrado.", ZombieWalkRoot);
+        }
+
+        return paths.Select(path => path.Replace("\\", "/"));
+    }
+
+    private static void ConfigureZombieSprites()
+    {
+        foreach (string path in GetZombieWalkPaths())
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+            {
+                throw new FileNotFoundException("Sprite do zumbi nao encontrado.", path);
+            }
+
+            bool changed = importer.textureType != TextureImporterType.Sprite
+                || !Mathf.Approximately(importer.spritePixelsPerUnit, ZombiePixelsPerUnit)
+                || importer.filterMode != FilterMode.Point
+                || importer.textureCompression != TextureImporterCompression.Uncompressed;
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spritePixelsPerUnit = ZombiePixelsPerUnit;
+            importer.filterMode = FilterMode.Point;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+
+            if (changed)
+            {
+                importer.SaveAndReimport();
+            }
+        }
+    }
+
+    private static Sprite[] LoadZombieWalkFrames()
+    {
+        Sprite[] frames = GetZombieWalkPaths()
+            .Select(path => AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault())
+            .Where(sprite => sprite != null)
+            .ToArray();
+
+        if (frames.Length == 0)
+        {
+            throw new InvalidDataException("Os quadros do zumbi nao foram importados como sprites.");
+        }
+
+        return frames;
+    }
+
     private static AnimatorController CreateAnimationsAndController()
     {
         string controllerPath = AnimationRoot + "/CharacterAnimator.controller";
@@ -280,7 +348,11 @@ public static class BuildCharacterDemoAssets
         return theme;
     }
 
-    private static void CreateDemoScene(AnimatorController controller, AudioClip theme, Sprite[] backgrounds)
+    private static void CreateDemoScene(
+        AnimatorController controller,
+        AudioClip theme,
+        Sprite[] backgrounds,
+        Sprite[] zombieFrames)
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "CharacterDemoScene";
@@ -328,6 +400,14 @@ public static class BuildCharacterDemoAssets
         {
             backgroundArray.GetArrayElementAtIndex(i).objectReferenceValue = backgrounds[i];
         }
+
+        SerializedProperty zombieFrameArray = serializedDemo.FindProperty("zombieWalkFrames");
+        zombieFrameArray.arraySize = zombieFrames.Length;
+        for (int i = 0; i < zombieFrames.Length; i++)
+        {
+            zombieFrameArray.GetArrayElementAtIndex(i).objectReferenceValue = zombieFrames[i];
+        }
+
         serializedDemo.ApplyModifiedProperties();
 
         EditorSceneManager.SaveScene(scene, SceneRoot + "/CharacterDemoScene.unity");

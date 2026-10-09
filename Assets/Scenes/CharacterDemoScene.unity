@@ -337,7 +337,18 @@ MonoBehaviour:
   - {fileID: -8326133134483607215, guid: 8fdd9cf0e654572428537e3af954ff01, type: 3}
   - {fileID: 1387363957364076914, guid: 297b7f544d1464b48ae532d878c2b9e2, type: 3}
   - {fileID: -443023582339287750, guid: b38d3b17479940b47a0f84c8547fa73a, type: 3}
+  zombieWalkFrames:
+  - {fileID: -855298285791758126, guid: a7d0dc88617cf4646beebc0810c74686, type: 3}
+  - {fileID: 6937817954938267909, guid: 6fed31bbca29e8d4497ef060fc1419d7, type: 3}
+  - {fileID: -6470460504253458178, guid: 237cf0dc136e0694a96b5b831a11be0c, type: 3}
+  - {fileID: -4178046375966092550, guid: 0aee03467b28cea4a8c12cc98ca542b7, type: 3}
+  - {fileID: 4130640169021434097, guid: 67fce62ed0baa9b4d8143acb892653dc, type: 3}
+  - {fileID: 3465286685962602723, guid: cfb12c2668b0f1c4d89c1b24b08137cc, type: 3}
+  - {fileID: 7028616704906629411, guid: 1d1a09e0365e56349878428c288a2eb3, type: 3}
+  - {fileID: 8288426215254106694, guid: e8ea0727d9e2d4c48a671fd8bfde0a2e, type: 3}
+  - {fileID: 4113829005332862926, guid: f71b40b17b773e24aa799d59f4859bd9, type: 3}
   backgroundZoom: 1
+  zombieHeightRatio: 0.5
   stateNames:
   - Idle
   - Walk
