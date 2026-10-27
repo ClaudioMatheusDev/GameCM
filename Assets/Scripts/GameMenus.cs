@@ -28,15 +28,6 @@ public class GameMenus : MonoBehaviour
         + "Trilha sonora: criada no BeepBox\n"
         + "Motor: Unity 6";
 
-    private const string HowToPlayText =
-        "A / D ou setas: mover\n"
-        + "Shift: correr\n"
-        + "Espaco: pular (ajuda a desviar dos zumbis)\n"
-        + "J: soco     K: poder (recarga de 2 s)\n"
-        + "Esc ou Start: pausar\n\n"
-        + "Elimine todos os zumbis e va ate a borda direita para avancar.\n"
-        + "Gamepad: analogico, A pula, X soco, Y poder, gatilho direito corre.";
-
     private const float IntroSeconds = 2f;
     private const float VolumeStep = 0.1f;
 
@@ -84,6 +75,14 @@ public class GameMenus : MonoBehaviour
         else
         {
             Open(MenuScreen.Main);
+        }
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus && player != null && current == MenuScreen.None && stage.State == GameState.Playing)
+        {
+            Open(MenuScreen.Pause);
         }
     }
 
@@ -321,7 +320,7 @@ public class GameMenus : MonoBehaviour
 
         BuildMain(canvas.transform);
         BuildStageSelect(canvas.transform);
-        BuildInfoScreen(canvas.transform, MenuScreen.HowToPlay, "COMO JOGAR", HowToPlayText, 300f);
+        BuildInfoScreen(canvas.transform, MenuScreen.HowToPlay, "COMO JOGAR", ControlsText.HowToPlay, 300f);
         BuildOptions(canvas.transform);
         BuildInfoScreen(canvas.transform, MenuScreen.Credits, "CREDITOS", Credits, 220f);
         BuildPause(canvas.transform);

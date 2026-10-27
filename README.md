@@ -57,8 +57,9 @@ Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principa
 - `ZombieVariant` / `ZombieSpawnTable`: tipos de zumbi (normal, rapido, resistente, chefe) e sorteio por fase.
 - `CameraShake` / `HitStop` / `ImpactFx`: tremor de camera e pausa curta ao acertar golpes, matar zumbis, levar dano e nas investidas do chefe.
 - `SfxPlayer`: efeitos sonoros (soco, poder, pulo, dano, morte e menus) com cortes por duracao maxima.
+- `ControlsText`: textos de controles usados no HUD e na tela "Como jogar" (altere so aqui).
 - `GameProgress` / `GameSession`: dados salvos e estado entre recarregamentos de cena.
 
 ## Testes
 
-`Window > General > Test Runner > EditMode > Run All`.
+`Window > General > Test Runner > EditMode > Run All`. O workflow `.github/workflows/tests.yml` roda os mesmos testes no GitHub (exige os segredos `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`).

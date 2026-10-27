@@ -26,6 +26,7 @@ public class PlayerTuning
     public float invulnerabilityDuration = 1.2f;
     public float hurtDuration = 0.4f;
     public float hurtKnockback = 6f;
+    public float hurtKnockbackFriction = 15f;
 }
 
 [RequireComponent(typeof(Animator), typeof(SpriteRenderer), typeof(Health))]
@@ -33,9 +34,10 @@ public class PlayerController : MonoBehaviour
 {
     private const float MoveDeadZone = 0.2f;
     private const float BlinkPeriod = 0.16f;
+    private static readonly int StateParameter = Animator.StringToHash("State");
 
     private PlayerTuning settings;
-    private string[] stateNames;
+    private readonly Dictionary<string, int> stateIndex = new Dictionary<string, int>();
     private Animator animator;
     private SpriteRenderer spriteRenderer;
     private Health health;
@@ -62,13 +64,21 @@ public class PlayerController : MonoBehaviour
     public bool IsDead => health != null && health.IsDead;
     public bool InputLocked { get; set; }
     public float PowerCooldownRemaining => powerCooldownTimer;
+
+    /// <summary>Altura do jogador acima do chao (0 em solo, sobe durante o pulo).</summary>
+    public float AirHeight => transform.position.y - groundY;
     public bool RestartPressed => input != null && input.RestartPressed;
     public bool BackPressed => input != null && input.BackPressed;
 
     public void Configure(PlayerTuning playerSettings, string[] animatorStates)
     {
         settings = playerSettings;
-        stateNames = animatorStates;
+        stateIndex.Clear();
+        for (int i = 0; i < animatorStates.Length; i++)
+        {
+            stateIndex[animatorStates[i]] = i;
+        }
+
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         health = GetComponent<Health>();
@@ -166,7 +176,7 @@ public class PlayerController : MonoBehaviour
         if (isHurt)
         {
             position.x += knockbackVelocity * deltaTime;
-            knockbackVelocity = Mathf.MoveTowards(knockbackVelocity, 0f, 15f * deltaTime);
+            knockbackVelocity = Mathf.MoveTowards(knockbackVelocity, 0f, settings.hurtKnockbackFriction * deltaTime);
         }
         else
         {
@@ -294,8 +304,7 @@ public class PlayerController : MonoBehaviour
         bool anyKill = false;
         for (int i = 0; i < hitBuffer.Count; i++)
         {
-            ZombieController zombie = hitBuffer[i].GetComponent<ZombieController>();
-            if (zombie != null && zombie.ApplyHit(damage, knockback))
+            if (hitBuffer[i].TryGetComponent(out ZombieController zombie) && zombie.ApplyHit(damage, knockback))
             {
                 anyHit = true;
                 anyKill |= !zombie.IsAlive && !zombie.IsBoss;
@@ -332,18 +341,9 @@ public class PlayerController : MonoBehaviour
 
     private void ApplyState(string stateName)
     {
-        if (animator == null || stateNames == null)
+        if (animator != null && stateIndex.TryGetValue(stateName, out int index))
         {
-            return;
-        }
-
-        for (int i = 0; i < stateNames.Length; i++)
-        {
-            if (stateNames[i] == stateName)
-            {
-                animator.SetInteger("State", i);
-                return;
-            }
+            animator.SetInteger(StateParameter, index);
         }
     }
 }

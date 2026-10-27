@@ -41,6 +41,7 @@ public class StageManager : MonoBehaviour
     private float startX;
     private float endX;
     private float groundY;
+    private float groundFeetY;
     private float zombieScale;
     private bool configured;
 
@@ -91,6 +92,7 @@ public class StageManager : MonoBehaviour
         groundY = player.transform.position.y;
 
         SpriteRenderer playerRenderer = player.GetComponent<SpriteRenderer>();
+        groundFeetY = playerRenderer.bounds.min.y;
         zombieScale = frames.Walk != null && frames.Walk.Length > 0
             ? playerRenderer.bounds.size.y * settings.zombieHeightRatio / frames.Walk[0].bounds.size.y
             : 1f;
@@ -186,7 +188,8 @@ public class StageManager : MonoBehaviour
         bool isBoss = bossPending && zombiesSpawned == zombieTarget - 1;
         ZombieType type = isBoss ? ZombieType.Boss : ZombieSpawnTable.Roll(StageIndex, UnityEngine.Random.value);
         Vector3 position = new Vector3(PickSpawnX(), groundY, player.transform.position.z);
-        zombie.Setup(frames, zombieSettings, ZombieVariant.Get(type), player, position, zombieScale, startX, endX);
+        zombie.Setup(frames, zombieSettings, ZombieVariant.Get(type), player, position, zombieScale, startX, endX, active);
+        AlignFeetToGround(zombie);
         active.Add(zombie);
 
         if (isBoss)
@@ -195,6 +198,15 @@ public class StageManager : MonoBehaviour
             SfxPlayer.Play(Sfx.BossRoar);
             ImpactFx.Play(Fx.BossCharge);
         }
+    }
+
+    /// <summary>Os pivos dos sprites diferem; alinha os pes do zumbi aos do jogador para nao parecer mais ao fundo.</summary>
+    private void AlignFeetToGround(ZombieController zombie)
+    {
+        Bounds bounds = zombie.GetComponent<SpriteRenderer>().bounds;
+        Vector3 position = zombie.transform.position;
+        position.y += groundFeetY - bounds.min.y;
+        zombie.transform.position = position;
     }
 
     private ZombieController CreateZombie()
@@ -213,36 +225,24 @@ public class StageManager : MonoBehaviour
 
     private float PickSpawnX()
     {
-        float playerX = player.transform.position.x;
-        float low = startX + settings.spawnMargin;
-        float high = endX - settings.spawnMargin;
-        float leftMax = Mathf.Min(high, playerX - settings.spawnMinDistance);
-        float rightMin = Mathf.Max(low, playerX + settings.spawnMinDistance);
-        bool canSpawnLeft = leftMax > low;
-        bool canSpawnRight = rightMin < high;
-
-        if (canSpawnLeft && canSpawnRight)
-        {
-            return UnityEngine.Random.value < 0.5f
-                ? UnityEngine.Random.Range(low, leftMax)
-                : UnityEngine.Random.Range(rightMin, high);
-        }
-
-        if (canSpawnRight)
-        {
-            return UnityEngine.Random.Range(rightMin, high);
-        }
-
-        if (canSpawnLeft)
-        {
-            return UnityEngine.Random.Range(low, leftMax);
-        }
-
-        return playerX < (startX + endX) * 0.5f ? high : low;
+        return SpawnPlacement.Pick(
+            player.transform.position.x,
+            startX,
+            endX,
+            settings.spawnMargin,
+            settings.spawnMinDistance,
+            UnityEngine.Random.value,
+            UnityEngine.Random.value);
     }
 
     private void OnZombieDied(ZombieController zombie)
     {
+        // Zumbis ja limpos por uma troca de fase nao podem contar na fase nova.
+        if (!active.Contains(zombie))
+        {
+            return;
+        }
+
         zombiesKilled++;
         if (zombie == ActiveBoss)
         {
@@ -296,5 +296,38 @@ public class StageManager : MonoBehaviour
         localScale.x = scale;
         localScale.y = scale;
         background.transform.localScale = localScale;
+    }
+}
+
+/// <summary>Escolha da posicao X de nascimento dos zumbis (logica pura, testavel).</summary>
+public static class SpawnPlacement
+{
+    /// <param name="side">Sorteio 0..1 que decide o lado (esquerda/direita) quando ambos cabem.</param>
+    /// <param name="t">Sorteio 0..1 que decide a posicao dentro da faixa escolhida.</param>
+    public static float Pick(float playerX, float startX, float endX, float margin, float minDistance, float side, float t)
+    {
+        float low = startX + margin;
+        float high = endX - margin;
+        float leftMax = Mathf.Min(high, playerX - minDistance);
+        float rightMin = Mathf.Max(low, playerX + minDistance);
+        bool canSpawnLeft = leftMax > low;
+        bool canSpawnRight = rightMin < high;
+
+        if (canSpawnLeft && canSpawnRight)
+        {
+            return side < 0.5f ? Mathf.Lerp(low, leftMax, t) : Mathf.Lerp(rightMin, high, t);
+        }
+
+        if (canSpawnRight)
+        {
+            return Mathf.Lerp(rightMin, high, t);
+        }
+
+        if (canSpawnLeft)
+        {
+            return Mathf.Lerp(low, leftMax, t);
+        }
+
+        return playerX < (startX + endX) * 0.5f ? high : low;
     }
 }

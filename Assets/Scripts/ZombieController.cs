@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -20,6 +21,10 @@ public class ZombieSettings
     public float chargeWindup = 0.6f;
     public float chargeDuration = 0.7f;
     public float chargeSpeedMultiplier = 3.2f;
+    public float knockbackFriction = 12f;
+    public float windupPulseSpeed = 10f;
+    public float separationDistance = 0.7f;
+    public float attackRetryDelay = 0.15f;
 }
 
 public class ZombieFrames
@@ -34,6 +39,7 @@ public class ZombieController : MonoBehaviour
 {
     private const float ChargeMinDistance = 2.5f;
     private const float ChargeMaxDistance = 8f;
+    private const float SeparationSpeed = 6f;
 
     private enum State
     {
@@ -60,6 +66,7 @@ public class ZombieController : MonoBehaviour
     private float knockbackVelocity;
     private float minX;
     private float maxX;
+    private IReadOnlyList<ZombieController> neighbors;
 
     public event Action<ZombieController> Died;
     public event Action<ZombieController> Finished;
@@ -97,7 +104,8 @@ public class ZombieController : MonoBehaviour
         Vector3 position,
         float scale,
         float stageMinX,
-        float stageMaxX)
+        float stageMaxX,
+        IReadOnlyList<ZombieController> activeZombies)
     {
         frames = zombieFrames;
         settings = zombieSettings;
@@ -105,6 +113,7 @@ public class ZombieController : MonoBehaviour
         player = target;
         minX = stageMinX;
         maxX = stageMaxX;
+        neighbors = activeZombies;
 
         transform.position = position;
         transform.localScale = Vector3.one * scale * variant.ScaleMultiplier;
@@ -184,6 +193,7 @@ public class ZombieController : MonoBehaviour
             transform.position = position;
         }
 
+        Separate(deltaTime);
         TryContactAttack(deltaTime);
 
         if (variant.Charges)
@@ -200,7 +210,7 @@ public class ZombieController : MonoBehaviour
     private void UpdateWindup(float deltaTime)
     {
         stateTimer -= deltaTime;
-        float pulse = Mathf.PingPong(Time.time * 10f, 1f);
+        float pulse = Mathf.PingPong(Time.time * settings.windupPulseSpeed, 1f);
         spriteRenderer.color = Color.Lerp(variant.Tint, Color.red, pulse);
 
         if (stateTimer <= 0f)
@@ -234,13 +244,50 @@ public class ZombieController : MonoBehaviour
         attackTimer -= deltaTime;
         Vector3 position = transform.position;
         float dx = player.transform.position.x - position.x;
-        float dy = player.transform.position.y - position.y;
+        float dy = player.AirHeight;
         bool inRange = Mathf.Abs(dx) <= AttackRange && Mathf.Abs(dy) <= settings.attackHeight;
         int damage = Mathf.Max(1, Mathf.RoundToInt(settings.contactDamage * variant.DamageMultiplier));
 
-        if (attackTimer <= 0f && inRange && player.ReceiveHit(damage, position.x))
+        if (attackTimer <= 0f && inRange)
         {
-            attackTimer = settings.attackCooldown;
+            // Se o jogador estava invulneravel, tenta de novo em breve em vez de a cada frame.
+            attackTimer = player.ReceiveHit(damage, position.x) ? settings.attackCooldown : settings.attackRetryDelay;
+        }
+    }
+
+    /// <summary>Afasta este zumbi dos vizinhos vivos para eles nao ficarem empilhados.</summary>
+    private void Separate(float deltaTime)
+    {
+        if (neighbors == null)
+        {
+            return;
+        }
+
+        float minGap = settings.separationDistance * variant.ScaleMultiplier;
+        Vector3 position = transform.position;
+        float push = 0f;
+        for (int i = 0; i < neighbors.Count; i++)
+        {
+            ZombieController other = neighbors[i];
+            if (other == this || !other.IsAlive || !other.gameObject.activeSelf)
+            {
+                continue;
+            }
+
+            float gap = position.x - other.transform.position.x;
+            if (Mathf.Abs(gap) >= minGap)
+            {
+                continue;
+            }
+
+            float away = Mathf.Approximately(gap, 0f) ? (GetInstanceID() < other.GetInstanceID() ? -1f : 1f) : Mathf.Sign(gap);
+            push += away * (minGap - Mathf.Abs(gap));
+        }
+
+        if (push != 0f)
+        {
+            position.x = Mathf.Clamp(position.x + Mathf.Clamp(push, -1f, 1f) * SeparationSpeed * deltaTime, minX, maxX);
+            transform.position = position;
         }
     }
 
@@ -269,7 +316,7 @@ public class ZombieController : MonoBehaviour
         Vector3 position = transform.position;
         position.x = Mathf.Clamp(position.x + knockbackVelocity * deltaTime, minX, maxX);
         transform.position = position;
-        knockbackVelocity = Mathf.MoveTowards(knockbackVelocity, 0f, 12f * deltaTime);
+        knockbackVelocity = Mathf.MoveTowards(knockbackVelocity, 0f, settings.knockbackFriction * deltaTime);
     }
 
     private void EnterWalking()

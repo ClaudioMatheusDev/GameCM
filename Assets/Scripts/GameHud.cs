@@ -12,6 +12,22 @@ public class GameHud : MonoBehaviour
     private GUIStyle rightStyle;
     private GUIStyle hintStyle;
 
+    // Textos em cache: so sao remontados quando o valor muda (evita lixo a cada frame do OnGUI).
+    private string stageText = "";
+    private string remainingText = "";
+    private string scoreText = "";
+    private string timeText = "";
+    private string comboText = "";
+    private string powerText = "";
+    private string healthText = "";
+    private int stageKey = -1;
+    private int remainingKey = -1;
+    private int scoreKey = -1;
+    private int timeKey = -1;
+    private int comboKey = -1;
+    private int powerKey = -2;
+    private int healthKey = -1;
+
     public bool Visible { get; set; } = true;
 
     public void Configure(PlayerController playerController, StageManager stageManager, ScoreTracker scoreTracker)
@@ -35,18 +51,18 @@ public class GameHud : MonoBehaviour
         float height = ReferenceHeight;
 
         DrawHealthBar(new Rect(20f, 20f, 260f, 22f));
-        GUI.Label(new Rect(20f, 48f, 400f, 30f), "Fase " + (stage.StageIndex + 1) + "/" + stage.StageCount, labelStyle);
-        GUI.Label(new Rect(20f, 76f, 400f, 30f), "Zumbis restantes: " + stage.ZombiesRemaining, labelStyle);
+        GUI.Label(new Rect(20f, 48f, 400f, 30f), StageText(), labelStyle);
+        GUI.Label(new Rect(20f, 76f, 400f, 30f), RemainingText(), labelStyle);
         GUI.Label(new Rect(20f, 104f, 400f, 30f), PowerText(), labelStyle);
 
-        GUI.Label(new Rect(width - 420f, 20f, 400f, 30f), "Pontos: " + score.Score, rightStyle);
-        GUI.Label(new Rect(width - 420f, 48f, 400f, 30f), "Tempo: " + TimeText(score.Elapsed), rightStyle);
+        GUI.Label(new Rect(width - 420f, 20f, 400f, 30f), ScoreText(), rightStyle);
+        GUI.Label(new Rect(width - 420f, 48f, 400f, 30f), ElapsedText(), rightStyle);
         if (score.Combo > 1)
         {
-            GUI.Label(new Rect(width - 420f, 76f, 400f, 30f), "Combo x" + score.Combo, rightStyle);
+            GUI.Label(new Rect(width - 420f, 76f, 400f, 30f), ComboText(), rightStyle);
         }
 
-        string hint = "A/D mover  Shift correr  Espaco pular  J soco  K poder  Esc pausa";
+        string hint = ControlsText.HudHint;
         if (stage.State == GameState.Playing && stage.StageCleared)
         {
             hint = "Fase limpa! Va ate a borda direita da tela.";
@@ -67,7 +83,7 @@ public class GameHud : MonoBehaviour
         GUI.color = new Color(0.85f, 0.15f, 0.15f, 1f);
         GUI.DrawTexture(new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * fraction, rect.height - 4f), Texture2D.whiteTexture);
         GUI.color = previous;
-        GUI.Label(rect, health.Current + "/" + health.Max, hintStyle);
+        GUI.Label(rect, HealthText(health), hintStyle);
     }
 
     private void DrawBossBar(float width)
@@ -90,17 +106,86 @@ public class GameHud : MonoBehaviour
         GUI.Label(new Rect(rect.x, rect.y - 30f, rect.width, 28f), "CHEFE", hintStyle);
     }
 
+    private string StageText()
+    {
+        int key = stage.StageIndex * 100 + stage.StageCount;
+        if (key != stageKey)
+        {
+            stageKey = key;
+            stageText = "Fase " + (stage.StageIndex + 1) + "/" + stage.StageCount;
+        }
+
+        return stageText;
+    }
+
+    private string RemainingText()
+    {
+        if (stage.ZombiesRemaining != remainingKey)
+        {
+            remainingKey = stage.ZombiesRemaining;
+            remainingText = "Zumbis restantes: " + remainingKey;
+        }
+
+        return remainingText;
+    }
+
+    private string ScoreText()
+    {
+        if (score.Score != scoreKey)
+        {
+            scoreKey = score.Score;
+            scoreText = "Pontos: " + scoreKey;
+        }
+
+        return scoreText;
+    }
+
+    private string ElapsedText()
+    {
+        int seconds = Mathf.FloorToInt(score.Elapsed);
+        if (seconds != timeKey)
+        {
+            timeKey = seconds;
+            timeText = "Tempo: " + (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00");
+        }
+
+        return timeText;
+    }
+
+    private string ComboText()
+    {
+        if (score.Combo != comboKey)
+        {
+            comboKey = score.Combo;
+            comboText = "Combo x" + comboKey;
+        }
+
+        return comboText;
+    }
+
     private string PowerText()
     {
         float remaining = player.PowerCooldownRemaining;
-        return remaining > 0f ? "Poder: " + remaining.ToString("0.0") + "s" : "Poder: pronto";
+        int key = remaining > 0f ? Mathf.CeilToInt(remaining * 10f) : 0;
+        if (key != powerKey)
+        {
+            powerKey = key;
+            powerText = key > 0 ? "Poder: " + (key / 10f).ToString("0.0") + "s" : "Poder: pronto";
+        }
+
+        return powerText;
     }
 
-    private static string TimeText(float seconds)
+    private string HealthText(Health health)
     {
-        int minutes = Mathf.FloorToInt(seconds / 60f);
-        int rest = Mathf.FloorToInt(seconds % 60f);
-        return minutes.ToString("00") + ":" + rest.ToString("00");
+        int key = health.Current * 1000 + health.Max;
+        if (key != healthKey)
+        {
+            healthKey = key;
+            healthText = health.Current + "/" + health.Max;
+        }
+
+        return healthText;
     }
 
     private void EnsureStyles()
