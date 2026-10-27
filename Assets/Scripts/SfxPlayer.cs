@@ -11,7 +11,8 @@ public enum Sfx
     ZombieHurt,
     ZombieDeath,
     UiClick,
-    UiSelect
+    UiSelect,
+    BossRoar
 }
 
 [Serializable]
@@ -198,6 +199,8 @@ public class SfxPlayer : MonoBehaviour
                 return new Playback(bank.uiClick, 0.8f, 1f, 0.5f);
             case Sfx.UiSelect:
                 return new Playback(bank.uiSelect, 0.6f, 1f, 0.3f);
+            case Sfx.BossRoar:
+                return new Playback(bank.power, 1f, 0.6f, 1.5f);
             default:
                 return default;
         }

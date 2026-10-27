@@ -15,6 +15,11 @@ public static class ScoreCalculator
         return BaseKillPoints + ComboStepPoints * Mathf.Clamp(combo - 1, 0, MaxComboSteps);
     }
 
+    public static int KillPoints(int combo, float multiplier)
+    {
+        return Mathf.RoundToInt(KillPoints(combo) * multiplier);
+    }
+
     public static float ParTime(int zombies)
     {
         return 15f + 12f * Mathf.Max(0, zombies);

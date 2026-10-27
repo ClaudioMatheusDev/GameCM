@@ -16,6 +16,10 @@ public class ZombieSettings
     public float deathFps = 3f;
     public float deathFadeDelay = 0.6f;
     public float deathFadeDuration = 0.6f;
+    public float chargeCooldown = 4f;
+    public float chargeWindup = 0.6f;
+    public float chargeDuration = 0.7f;
+    public float chargeSpeedMultiplier = 3.2f;
 }
 
 public class ZombieFrames
@@ -28,9 +32,14 @@ public class ZombieFrames
 [RequireComponent(typeof(SpriteRenderer), typeof(SpriteFrameAnimator), typeof(Health))]
 public class ZombieController : MonoBehaviour
 {
+    private const float ChargeMinDistance = 2.5f;
+    private const float ChargeMaxDistance = 8f;
+
     private enum State
     {
         Walking,
+        Windup,
+        Charging,
         Hurt,
         Dying
     }
@@ -40,11 +49,14 @@ public class ZombieController : MonoBehaviour
     private Health health;
     private BoxCollider2D hitBox;
     private ZombieSettings settings;
+    private ZombieVariant variant;
     private ZombieFrames frames;
     private PlayerController player;
     private State state;
     private float stateTimer;
     private float attackTimer;
+    private float chargeTimer;
+    private float chargeDirection;
     private float knockbackVelocity;
     private float minX;
     private float maxX;
@@ -52,7 +64,14 @@ public class ZombieController : MonoBehaviour
     public event Action<ZombieController> Died;
     public event Action<ZombieController> Finished;
 
+    public ZombieVariant Variant => variant;
+    public Health Health => health;
+    public bool IsBoss => variant != null && variant.Type == ZombieType.Boss;
     public bool IsAlive => state != State.Dying;
+
+    private float StopDistance => settings.stopDistance * variant.ScaleMultiplier;
+    private float AttackRange => settings.attackRange * variant.ScaleMultiplier;
+    private float MoveSpeed => settings.moveSpeed * variant.SpeedMultiplier;
 
     private void Awake()
     {
@@ -73,6 +92,7 @@ public class ZombieController : MonoBehaviour
     public void Setup(
         ZombieFrames zombieFrames,
         ZombieSettings zombieSettings,
+        ZombieVariant zombieVariant,
         PlayerController target,
         Vector3 position,
         float scale,
@@ -81,13 +101,14 @@ public class ZombieController : MonoBehaviour
     {
         frames = zombieFrames;
         settings = zombieSettings;
+        variant = zombieVariant;
         player = target;
         minX = stageMinX;
         maxX = stageMaxX;
 
         transform.position = position;
-        transform.localScale = Vector3.one * scale;
-        spriteRenderer.color = Color.white;
+        transform.localScale = Vector3.one * scale * variant.ScaleMultiplier;
+        spriteRenderer.color = variant.Tint;
         spriteRenderer.sprite = frames.Walk[0];
 
         Bounds bounds = frames.Walk[0].bounds;
@@ -95,8 +116,9 @@ public class ZombieController : MonoBehaviour
         hitBox.offset = bounds.center;
         hitBox.enabled = true;
 
-        health.Initialize(settings.health, 0f);
+        health.Initialize(Mathf.Max(1, Mathf.RoundToInt(settings.health * variant.HealthMultiplier)), 0f);
         attackTimer = 0f;
+        chargeTimer = variant.Charges ? settings.chargeCooldown * 0.5f : 0f;
         knockbackVelocity = 0f;
         EnterWalking();
         gameObject.SetActive(true);
@@ -111,7 +133,7 @@ public class ZombieController : MonoBehaviour
         }
 
         float away = Mathf.Sign(transform.position.x - player.transform.position.x);
-        knockbackVelocity = away * knockbackSpeed;
+        knockbackVelocity = away * knockbackSpeed * (1f - variant.KnockbackResistance);
         return health.TakeDamage(damage);
     }
 
@@ -124,6 +146,12 @@ public class ZombieController : MonoBehaviour
         {
             case State.Walking:
                 UpdateWalking(deltaTime);
+                break;
+            case State.Windup:
+                UpdateWindup(deltaTime);
+                break;
+            case State.Charging:
+                UpdateCharging(deltaTime);
                 break;
             case State.Hurt:
                 stateTimer -= deltaTime;
@@ -143,7 +171,6 @@ public class ZombieController : MonoBehaviour
     {
         Vector3 position = transform.position;
         float dx = player.transform.position.x - position.x;
-        float dy = player.transform.position.y - position.y;
         spriteRenderer.flipX = dx > 0f;
 
         if (player.IsDead)
@@ -151,15 +178,67 @@ public class ZombieController : MonoBehaviour
             return;
         }
 
-        if (Mathf.Abs(dx) > settings.stopDistance)
+        if (Mathf.Abs(dx) > StopDistance)
         {
-            position.x = Mathf.MoveTowards(position.x, player.transform.position.x, settings.moveSpeed * deltaTime);
+            position.x = Mathf.MoveTowards(position.x, player.transform.position.x, MoveSpeed * deltaTime);
             transform.position = position;
         }
 
+        TryContactAttack(deltaTime);
+
+        if (variant.Charges)
+        {
+            chargeTimer -= deltaTime;
+            float distance = Mathf.Abs(dx);
+            if (chargeTimer <= 0f && distance >= ChargeMinDistance && distance <= ChargeMaxDistance)
+            {
+                EnterWindup();
+            }
+        }
+    }
+
+    private void UpdateWindup(float deltaTime)
+    {
+        stateTimer -= deltaTime;
+        float pulse = Mathf.PingPong(Time.time * 10f, 1f);
+        spriteRenderer.color = Color.Lerp(variant.Tint, Color.red, pulse);
+
+        if (stateTimer <= 0f)
+        {
+            EnterCharging();
+        }
+    }
+
+    private void UpdateCharging(float deltaTime)
+    {
+        stateTimer -= deltaTime;
+        Vector3 position = transform.position;
+        position.x = Mathf.Clamp(position.x + chargeDirection * MoveSpeed * settings.chargeSpeedMultiplier * deltaTime, minX, maxX);
+        transform.position = position;
+
+        if (!player.IsDead)
+        {
+            TryContactAttack(deltaTime);
+        }
+
+        if (stateTimer <= 0f)
+        {
+            chargeTimer = settings.chargeCooldown;
+            ImpactFx.Play(Fx.BossCharge);
+            EnterWalking();
+        }
+    }
+
+    private void TryContactAttack(float deltaTime)
+    {
         attackTimer -= deltaTime;
-        bool inRange = Mathf.Abs(dx) <= settings.attackRange && Mathf.Abs(dy) <= settings.attackHeight;
-        if (attackTimer <= 0f && inRange && player.ReceiveHit(settings.contactDamage, position.x))
+        Vector3 position = transform.position;
+        float dx = player.transform.position.x - position.x;
+        float dy = player.transform.position.y - position.y;
+        bool inRange = Mathf.Abs(dx) <= AttackRange && Mathf.Abs(dy) <= settings.attackHeight;
+        int damage = Mathf.Max(1, Mathf.RoundToInt(settings.contactDamage * variant.DamageMultiplier));
+
+        if (attackTimer <= 0f && inRange && player.ReceiveHit(damage, position.x))
         {
             attackTimer = settings.attackCooldown;
         }
@@ -196,7 +275,24 @@ public class ZombieController : MonoBehaviour
     private void EnterWalking()
     {
         state = State.Walking;
+        spriteRenderer.color = variant.Tint;
         frameAnimator.Play(frames.Walk, settings.walkFps, true);
+    }
+
+    private void EnterWindup()
+    {
+        state = State.Windup;
+        stateTimer = settings.chargeWindup;
+        SfxPlayer.Play(Sfx.BossRoar);
+    }
+
+    private void EnterCharging()
+    {
+        state = State.Charging;
+        stateTimer = settings.chargeDuration;
+        chargeDirection = Mathf.Sign(player.transform.position.x - transform.position.x);
+        spriteRenderer.flipX = chargeDirection > 0f;
+        spriteRenderer.color = variant.Tint;
     }
 
     private void OnDamaged(int amount)
@@ -206,20 +302,30 @@ public class ZombieController : MonoBehaviour
             return;
         }
 
-        state = State.Hurt;
         SfxPlayer.Play(Sfx.ZombieHurt);
-        stateTimer = settings.hurtDuration;
+
+        // O chefe nao sofre atordoamento enquanto prepara ou executa a investida.
+        if (state == State.Windup || state == State.Charging)
+        {
+            return;
+        }
+
+        float duration = settings.hurtDuration * variant.StaggerMultiplier;
+        state = State.Hurt;
+        stateTimer = duration;
+        spriteRenderer.color = Color.Lerp(variant.Tint, Color.red, 0.6f);
         if (frames.Hurt != null && frames.Hurt.Length > 0)
         {
-            frameAnimator.Play(frames.Hurt, frames.Hurt.Length / settings.hurtDuration, false);
+            frameAnimator.Play(frames.Hurt, frames.Hurt.Length / duration, false);
         }
     }
 
     private void OnDied()
     {
         state = State.Dying;
-        SfxPlayer.Play(Sfx.ZombieDeath);
+        SfxPlayer.Play(IsBoss ? Sfx.BossRoar : Sfx.ZombieDeath);
         stateTimer = 0f;
+        spriteRenderer.color = variant.Tint;
         hitBox.enabled = false;
         if (frames.Death != null && frames.Death.Length > 0)
         {
@@ -228,6 +334,11 @@ public class ZombieController : MonoBehaviour
         else
         {
             frameAnimator.Stop();
+        }
+
+        if (IsBoss)
+        {
+            ImpactFx.Play(Fx.BossDeath);
         }
 
         Died?.Invoke(this);
