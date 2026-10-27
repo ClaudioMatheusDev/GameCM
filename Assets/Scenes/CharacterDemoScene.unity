@@ -328,7 +328,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8dce7d3b8f11f2e4299dcf343abaa07e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CharacterDemoController
+  m_EditorClassIdentifier: GameCM.Runtime::CharacterDemoController
   animator: {fileID: 1307814069}
   themeSource: {fileID: 1307814068}
   stageBackground: {fileID: 3000000001}
@@ -347,8 +347,16 @@ MonoBehaviour:
   - {fileID: 7028616704906629411, guid: 1d1a09e0365e56349878428c288a2eb3, type: 3}
   - {fileID: 8288426215254106694, guid: e8ea0727d9e2d4c48a671fd8bfde0a2e, type: 3}
   - {fileID: 4113829005332862926, guid: f71b40b17b773e24aa799d59f4859bd9, type: 3}
-  backgroundZoom: 1
-  zombieHeightRatio: 0.5
+  zombieHurtFrames:
+  - {fileID: -855298285791758126, guid: 3af9676df3479eb4fa303c6b4cb00317, type: 3}
+  - {fileID: 6937817954938267909, guid: 9f9da3d69c774f14fb8b2db5e78cbfad, type: 3}
+  - {fileID: -6470460504253458178, guid: d10155f1a28b52749a26d9693adcd561, type: 3}
+  - {fileID: -4178046375966092550, guid: bd0987816bd68474c8617c65ba3fdd1c, type: 3}
+  - {fileID: 4130640169021434097, guid: d440cbe9acbdf584ead2b169ecd52917, type: 3}
+  - {fileID: 3465286685962602723, guid: f1b7d664d56a67249bf62f35c0712ce4, type: 3}
+  zombieDeathFrames:
+  - {fileID: -855298285791758126, guid: 1c41505960695db43bbff92f47365b3b, type: 3}
+  - {fileID: 6937817954938267909, guid: e0be41cdf04b3d842af92a850f7d4d99, type: 3}
   stateNames:
   - Idle
   - Walk
@@ -358,13 +366,14 @@ MonoBehaviour:
   - Power
   - Hurt
   - Dead
-  horizontalSpeed: 5
-  stageStartX: -10.5
-  stageEndX: 10.5
-  jumpDuration: 0.55
-  jumpHeight: 1.15
-  punchDuration: 0.6
-  powerDuration: 0.7
+  playerSettings:
+    stageStartX: -10.5
+    stageEndX: 10.5
+  zombieSettings:
+    health: 2
+  stageSettings:
+    zombieHeightRatio: 0.5
+    backgroundZoom: 1
 --- !u!82 &1307814068
 AudioSource:
   m_ObjectHideFlags: 0
