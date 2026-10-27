@@ -1,25 +1,29 @@
 using UnityEngine;
 
-/// <summary>HUD simples desenhado com IMGUI: vida, fase, zumbis restantes e telas de fim de jogo.</summary>
+/// <summary>HUD de jogo desenhado com IMGUI: vida, fase, zumbis restantes, pontuacao, combo e tempo.</summary>
 public class GameHud : MonoBehaviour
 {
     private const float ReferenceHeight = 720f;
 
     private PlayerController player;
     private StageManager stage;
+    private ScoreTracker score;
     private GUIStyle labelStyle;
-    private GUIStyle titleStyle;
+    private GUIStyle rightStyle;
     private GUIStyle hintStyle;
 
-    public void Configure(PlayerController playerController, StageManager stageManager)
+    public bool Visible { get; set; } = true;
+
+    public void Configure(PlayerController playerController, StageManager stageManager, ScoreTracker scoreTracker)
     {
         player = playerController;
         stage = stageManager;
+        score = scoreTracker;
     }
 
     private void OnGUI()
     {
-        if (player == null || stage == null)
+        if (!Visible || player == null || stage == null || score == null)
         {
             return;
         }
@@ -35,22 +39,20 @@ public class GameHud : MonoBehaviour
         GUI.Label(new Rect(20f, 76f, 400f, 30f), "Zumbis restantes: " + stage.ZombiesRemaining, labelStyle);
         GUI.Label(new Rect(20f, 104f, 400f, 30f), PowerText(), labelStyle);
 
-        string hint = "A/D mover  Shift correr  Espaco pular  J soco  K poder";
+        GUI.Label(new Rect(width - 420f, 20f, 400f, 30f), "Pontos: " + score.Score, rightStyle);
+        GUI.Label(new Rect(width - 420f, 48f, 400f, 30f), "Tempo: " + TimeText(score.Elapsed), rightStyle);
+        if (score.Combo > 1)
+        {
+            GUI.Label(new Rect(width - 420f, 76f, 400f, 30f), "Combo x" + score.Combo, rightStyle);
+        }
+
+        string hint = "A/D mover  Shift correr  Espaco pular  J soco  K poder  Esc pausa";
         if (stage.State == GameState.Playing && stage.StageCleared)
         {
             hint = "Fase limpa! Va ate a borda direita da tela.";
         }
 
         GUI.Label(new Rect(0f, height - 40f, width, 30f), hint, hintStyle);
-
-        if (stage.State == GameState.GameOver)
-        {
-            DrawCenterMessage(width, height, "VOCE MORREU", "Pressione R para reiniciar");
-        }
-        else if (stage.State == GameState.Victory)
-        {
-            DrawCenterMessage(width, height, "VITORIA!", "Pressione R para jogar novamente");
-        }
     }
 
     private void DrawHealthBar(Rect rect)
@@ -73,14 +75,11 @@ public class GameHud : MonoBehaviour
         return remaining > 0f ? "Poder: " + remaining.ToString("0.0") + "s" : "Poder: pronto";
     }
 
-    private void DrawCenterMessage(float width, float height, string title, string subtitle)
+    private static string TimeText(float seconds)
     {
-        Color previous = GUI.color;
-        GUI.color = new Color(0f, 0f, 0f, 0.55f);
-        GUI.DrawTexture(new Rect(0f, 0f, width, height), Texture2D.whiteTexture);
-        GUI.color = previous;
-        GUI.Label(new Rect(0f, height * 0.35f, width, 80f), title, titleStyle);
-        GUI.Label(new Rect(0f, height * 0.35f + 90f, width, 40f), subtitle, hintStyle);
+        int minutes = Mathf.FloorToInt(seconds / 60f);
+        int rest = Mathf.FloorToInt(seconds % 60f);
+        return minutes.ToString("00") + ":" + rest.ToString("00");
     }
 
     private void EnsureStyles()
@@ -93,13 +92,7 @@ public class GameHud : MonoBehaviour
         labelStyle = new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold };
         labelStyle.normal.textColor = Color.white;
 
-        titleStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 64,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter
-        };
-        titleStyle.normal.textColor = Color.white;
+        rightStyle = new GUIStyle(labelStyle) { alignment = TextAnchor.MiddleRight };
 
         hintStyle = new GUIStyle(GUI.skin.label)
         {

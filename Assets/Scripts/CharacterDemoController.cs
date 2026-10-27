@@ -1,9 +1,8 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Raiz da cena: guarda as referencias montadas pelo editor (fundos, sprites do zumbi, audio)
-/// e liga os componentes de jogo: PlayerController, StageManager e GameHud.
+/// e liga os componentes de jogo: PlayerController, StageManager, ScoreTracker, GameHud e GameMenus.
 /// </summary>
 public class CharacterDemoController : MonoBehaviour
 {
@@ -55,23 +54,22 @@ public class CharacterDemoController : MonoBehaviour
             zombieSettings,
             stageSettings,
             playerSettings.stageStartX,
-            playerSettings.stageEndX);
+            playerSettings.stageEndX,
+            GameSession.StartStage);
 
-        GetOrAdd<GameHud>().Configure(player, stage);
+        ScoreTracker score = GetOrAdd<ScoreTracker>();
+        score.Configure(stage, player);
+
+        GameHud hud = GetOrAdd<GameHud>();
+        hud.Configure(player, stage, score);
+
+        GetOrAdd<GameMenus>().Configure(player, stage, score, hud);
 
         if (themeSource != null && themeSource.clip != null)
         {
             themeSource.loop = true;
             themeSource.playOnAwake = false;
             themeSource.Play();
-        }
-    }
-
-    private void Update()
-    {
-        if (stage != null && stage.State != GameState.Playing && player.RestartPressed)
-        {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
     }
 

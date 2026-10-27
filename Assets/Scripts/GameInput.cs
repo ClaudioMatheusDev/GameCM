@@ -10,6 +10,7 @@ public sealed class GameInput : IDisposable
     private readonly InputAction power;
     private readonly InputAction sprint;
     private readonly InputAction restart;
+    private readonly InputAction back;
 
     public GameInput()
     {
@@ -29,7 +30,8 @@ public sealed class GameInput : IDisposable
         punch = CreateButton("Punch", "<Keyboard>/j", "<Gamepad>/buttonWest");
         power = CreateButton("Power", "<Keyboard>/k", "<Gamepad>/buttonNorth");
         sprint = CreateButton("Sprint", "<Keyboard>/leftShift", "<Gamepad>/rightTrigger");
-        restart = CreateButton("Restart", "<Keyboard>/r", "<Gamepad>/start");
+        restart = CreateButton("Restart", "<Keyboard>/r", "<Gamepad>/select");
+        back = CreateButton("Back", "<Keyboard>/escape", "<Gamepad>/start", "<Gamepad>/buttonEast");
 
         move.Enable();
     }
@@ -40,6 +42,7 @@ public sealed class GameInput : IDisposable
     public bool PunchPressed => punch.WasPressedThisFrame();
     public bool PowerPressed => power.WasPressedThisFrame();
     public bool RestartPressed => restart.WasPressedThisFrame();
+    public bool BackPressed => back.WasPressedThisFrame();
 
     public void Dispose()
     {
@@ -49,13 +52,17 @@ public sealed class GameInput : IDisposable
         power.Dispose();
         sprint.Dispose();
         restart.Dispose();
+        back.Dispose();
     }
 
-    private static InputAction CreateButton(string name, string keyboardPath, string gamepadPath)
+    private static InputAction CreateButton(string name, params string[] paths)
     {
         InputAction action = new InputAction(name, InputActionType.Button);
-        action.AddBinding(keyboardPath);
-        action.AddBinding(gamepadPath);
+        foreach (string path in paths)
+        {
+            action.AddBinding(path);
+        }
+
         action.Enable();
         return action;
     }

@@ -13,9 +13,20 @@ Abra o projeto na Unity, abra `Assets/Scenes/CharacterDemoScene.unity` e aperte 
 | Pular | Espaco | Botao sul (A) |
 | Soco | J | Botao oeste (X) |
 | Poder (recarga de 2 s) | K | Botao norte (Y) |
-| Reiniciar (fim de jogo) | R | Start |
+| Pausar / voltar | Esc | Start ou botao leste (B) |
+| Reiniciar (tela de resultado) | R | Select |
 
 **Objetivo:** elimine todos os zumbis da fase e va ate a borda direita da tela para avancar. Venca a fase 4 para ganhar. Voce tem 5 pontos de vida; zumbis causam dano ao encostar (pular ajuda a desviar) e voce fica invulneravel por um instante depois de ser atingido.
+
+## Telas
+
+Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principal**, **selecao de fase** (fases liberam ao concluir a anterior), **como jogar**, **opcoes** (volume e tela cheia), **creditos**, **pausa**, **introducao de fase** e **resultado** (pontuacao, recorde, combo, estrelas e tempo). Volume, tela cheia, recorde e fases liberadas ficam salvos em `PlayerPrefs` (`GameProgress`).
+
+## Pontuacao
+
+- 100 pontos por zumbi, +25 por nivel de combo (maximo +200). Levar dano zera o combo.
+- Bonus de tempo por fase (tempo-alvo = 15 s + 12 s por zumbi) e bonus de 200 pontos por ponto de vida restante na vitoria.
+- Estrelas por fase: 1 por concluir, +1 sem dano, +1 dentro do tempo-alvo.
 
 ## Estrutura
 
@@ -37,7 +48,10 @@ Abra o projeto na Unity, abra `Assets/Scenes/CharacterDemoScene.unity` e aperte 
 - `Health`: vida e invulnerabilidade temporaria.
 - `GameInput`: entrada (teclado e gamepad) montada em codigo.
 - `SpriteFrameAnimator`: animacao simples por troca de sprites (usada nos zumbis).
-- `GameHud`: HUD em IMGUI.
+- `GameHud`: HUD de jogo em IMGUI (vida, fase, pontos, combo, tempo).
+- `GameMenus` / `UiFactory`: telas em uGUI criadas em codigo.
+- `ScoreTracker` / `ScoreCalculator`: pontuacao, combo e estrelas.
+- `GameProgress` / `GameSession`: dados salvos e estado entre recarregamentos de cena.
 
 ## Testes
 

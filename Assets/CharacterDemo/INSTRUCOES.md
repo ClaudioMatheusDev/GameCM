@@ -4,7 +4,7 @@
 2. Aguarde a Unity importar os arquivos e compilar os scripts.
 3. (Opcional) No menu superior, clique em `Tools > Character Demo > Build All Deliverables` para regenerar a spritesheet, os Animation Clips, o Animator e a cena. A cena tambem e adicionada ao Build Settings.
 4. Abra a cena `Assets/Scenes/CharacterDemoScene.unity` e aperte Play.
-5. Controles: A/D mover, Shift correr, Espaco pular, J soco, K poder, R reiniciar apos o fim da partida (gamepad tambem suportado; veja o `README.md` na raiz).
+5. Controles: A/D mover, Shift correr, Espaco pular, J soco, K poder, Esc pausar, R reiniciar na tela de resultado (gamepad tambem suportado; veja o `README.md` na raiz).
 6. Para gravar o video demonstrativo, use a Game View com o audio do sistema ativo.
 
 Arquivos principais:

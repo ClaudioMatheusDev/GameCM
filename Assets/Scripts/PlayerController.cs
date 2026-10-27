@@ -63,6 +63,7 @@ public class PlayerController : MonoBehaviour
     public bool InputLocked { get; set; }
     public float PowerCooldownRemaining => powerCooldownTimer;
     public bool RestartPressed => input != null && input.RestartPressed;
+    public bool BackPressed => input != null && input.BackPressed;
 
     public void Configure(PlayerTuning playerSettings, string[] animatorStates)
     {

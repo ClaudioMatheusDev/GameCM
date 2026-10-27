@@ -52,10 +52,14 @@ public class StageManager : MonoBehaviour
     private readonly Stack<ZombieController> pool = new Stack<ZombieController>();
 
     public event Action<GameState> StateChanged;
+    public event Action<int> StageBegan;
+    public event Action<int> StageCompleted;
+    public event Action ZombieKilled;
 
     public GameState State { get; private set; } = GameState.Playing;
     public int StageIndex { get; private set; }
     public int StageCount => backgrounds != null ? backgrounds.Length : 0;
+    public int ZombiesTotal => zombieTarget;
     public int ZombiesRemaining => Mathf.Max(0, zombieTarget - zombiesKilled);
     public bool StageCleared => zombiesSpawned >= zombieTarget && zombiesKilled >= zombieTarget;
 
@@ -68,7 +72,8 @@ public class StageManager : MonoBehaviour
         ZombieSettings zombieConfig,
         StageSettings stageConfig,
         float stageStartX,
-        float stageEndX)
+        float stageEndX,
+        int startStageIndex)
     {
         background = backgroundRenderer;
         backgrounds = stageBackgrounds;
@@ -87,7 +92,8 @@ public class StageManager : MonoBehaviour
             : 1f;
 
         player.Died += OnPlayerDied;
-        SetBackground(backgrounds[0]);
+        StageIndex = Mathf.Clamp(startStageIndex, 0, backgrounds.Length - 1);
+        SetBackground(backgrounds[StageIndex]);
         BeginStage();
         configured = true;
     }
@@ -142,6 +148,7 @@ public class StageManager : MonoBehaviour
         zombiesSpawned = 0;
         zombiesKilled = 0;
         spawnTimer = UnityEngine.Random.Range(settings.firstSpawnDelayMin, settings.firstSpawnDelayMax);
+        StageBegan?.Invoke(StageIndex);
     }
 
     private void UpdateSpawning(float deltaTime)
@@ -217,6 +224,11 @@ public class StageManager : MonoBehaviour
     private void OnZombieDied(ZombieController zombie)
     {
         zombiesKilled++;
+        ZombieKilled?.Invoke();
+        if (StageCleared)
+        {
+            StageCompleted?.Invoke(StageIndex);
+        }
     }
 
     private void OnZombieFinished(ZombieController zombie)
