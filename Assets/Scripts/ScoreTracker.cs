@@ -3,6 +3,8 @@ using UnityEngine;
 /// <summary>Acompanha pontuacao, combo, tempo e estrelas da partida.</summary>
 public class ScoreTracker : MonoBehaviour
 {
+    private const float BossParBonusSeconds = 30f;
+
     private StageManager stage;
     private PlayerController player;
     private float stageTimer;
@@ -61,12 +63,12 @@ public class ScoreTracker : MonoBehaviour
         }
     }
 
-    private void OnZombieKilled()
+    private void OnZombieKilled(ZombieController zombie)
     {
         Kills++;
         Combo++;
         BestCombo = Mathf.Max(BestCombo, Combo);
-        Score += ScoreCalculator.KillPoints(Combo);
+        Score += ScoreCalculator.KillPoints(Combo, zombie.Variant.ScoreMultiplier);
     }
 
     private void OnPlayerDamaged(int amount)
@@ -83,7 +85,7 @@ public class ScoreTracker : MonoBehaviour
 
     private void OnStageCompleted(int stageIndex)
     {
-        float par = ScoreCalculator.ParTime(stage.ZombiesTotal);
+        float par = ScoreCalculator.ParTime(stage.ZombiesTotal) + (stage.IsBossStage ? BossParBonusSeconds : 0f);
         Score += ScoreCalculator.TimeBonus(stageTimer, par);
         TotalStars += ScoreCalculator.Stars(stageDamage, stageTimer, par);
         GameProgress.UnlockStage(stageIndex + 1);

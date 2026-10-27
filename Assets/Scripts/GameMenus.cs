@@ -139,6 +139,11 @@ public class GameMenus : MonoBehaviour
     private void Open(MenuScreen screen)
     {
         current = screen;
+        if (HitStop.Instance != null)
+        {
+            HitStop.Instance.Cancel();
+        }
+
         foreach (KeyValuePair<MenuScreen, GameObject> entry in panels)
         {
             entry.Value.SetActive(entry.Key == screen);
@@ -272,7 +277,7 @@ public class GameMenus : MonoBehaviour
         HideIntro();
         introTitle.text = "FASE " + (stageIndex + 1) + "/" + stage.StageCount;
         introSubtitle.text = stageIndex == stage.StageCount - 1
-            ? "Ultima fase! Elimine todos os zumbis."
+            ? "Ultima fase! Derrote todos os zumbis e o chefe."
             : "Elimine todos os zumbis e siga para a direita.";
         introRoot.SetActive(true);
         introRoutine = StartCoroutine(HideIntroAfterDelay());

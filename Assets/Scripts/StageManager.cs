@@ -23,6 +23,7 @@ public class StageSettings
     public float spawnMargin = 1f;
     public float zombieHeightRatio = 0.65f;
     public float backgroundZoom = 1f;
+    public bool bossOnLastStage = true;
 }
 
 /// <summary>Controla fases, fundos, geracao (com pool) de zumbis e o estado geral da partida.</summary>
@@ -47,6 +48,7 @@ public class StageManager : MonoBehaviour
     private int zombiesSpawned;
     private int zombiesKilled;
     private float spawnTimer;
+    private bool bossPending;
 
     private readonly List<ZombieController> active = new List<ZombieController>();
     private readonly Stack<ZombieController> pool = new Stack<ZombieController>();
@@ -54,11 +56,13 @@ public class StageManager : MonoBehaviour
     public event Action<GameState> StateChanged;
     public event Action<int> StageBegan;
     public event Action<int> StageCompleted;
-    public event Action ZombieKilled;
+    public event Action<ZombieController> ZombieKilled;
 
     public GameState State { get; private set; } = GameState.Playing;
     public int StageIndex { get; private set; }
     public int StageCount => backgrounds != null ? backgrounds.Length : 0;
+    public ZombieController ActiveBoss { get; private set; }
+    public bool IsBossStage => StageCount > 0 && StageIndex == StageCount - 1 && settings.bossOnLastStage;
     public int ZombiesTotal => zombieTarget;
     public int ZombiesRemaining => Mathf.Max(0, zombieTarget - zombiesKilled);
     public bool StageCleared => zombiesSpawned >= zombieTarget && zombiesKilled >= zombieTarget;
@@ -145,6 +149,13 @@ public class StageManager : MonoBehaviour
         zombieTarget = frames.Walk != null && frames.Walk.Length > 0
             ? baseCount + StageIndex * settings.extraZombiesPerStage
             : 0;
+        bossPending = IsBossStage && zombieTarget > 0;
+        if (bossPending)
+        {
+            zombieTarget++;
+        }
+
+        ActiveBoss = null;
         zombiesSpawned = 0;
         zombiesKilled = 0;
         spawnTimer = UnityEngine.Random.Range(settings.firstSpawnDelayMin, settings.firstSpawnDelayMax);
@@ -172,9 +183,18 @@ public class StageManager : MonoBehaviour
     private void SpawnZombie()
     {
         ZombieController zombie = pool.Count > 0 ? pool.Pop() : CreateZombie();
+        bool isBoss = bossPending && zombiesSpawned == zombieTarget - 1;
+        ZombieType type = isBoss ? ZombieType.Boss : ZombieSpawnTable.Roll(StageIndex, UnityEngine.Random.value);
         Vector3 position = new Vector3(PickSpawnX(), groundY, player.transform.position.z);
-        zombie.Setup(frames, zombieSettings, player, position, zombieScale, startX, endX);
+        zombie.Setup(frames, zombieSettings, ZombieVariant.Get(type), player, position, zombieScale, startX, endX);
         active.Add(zombie);
+
+        if (isBoss)
+        {
+            ActiveBoss = zombie;
+            SfxPlayer.Play(Sfx.BossRoar);
+            ImpactFx.Play(Fx.BossCharge);
+        }
     }
 
     private ZombieController CreateZombie()
@@ -224,7 +244,12 @@ public class StageManager : MonoBehaviour
     private void OnZombieDied(ZombieController zombie)
     {
         zombiesKilled++;
-        ZombieKilled?.Invoke();
+        if (zombie == ActiveBoss)
+        {
+            ActiveBoss = null;
+        }
+
+        ZombieKilled?.Invoke(zombie);
         if (StageCleared)
         {
             StageCompleted?.Invoke(StageIndex);
@@ -248,6 +273,7 @@ public class StageManager : MonoBehaviour
         }
 
         active.Clear();
+        ActiveBoss = null;
     }
 
     private void OnPlayerDied()

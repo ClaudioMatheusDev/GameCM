@@ -53,6 +53,7 @@ public class GameHud : MonoBehaviour
         }
 
         GUI.Label(new Rect(0f, height - 40f, width, 30f), hint, hintStyle);
+        DrawBossBar(width);
     }
 
     private void DrawHealthBar(Rect rect)
@@ -67,6 +68,26 @@ public class GameHud : MonoBehaviour
         GUI.DrawTexture(new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * fraction, rect.height - 4f), Texture2D.whiteTexture);
         GUI.color = previous;
         GUI.Label(rect, health.Current + "/" + health.Max, hintStyle);
+    }
+
+    private void DrawBossBar(float width)
+    {
+        ZombieController boss = stage.ActiveBoss;
+        if (boss == null || !boss.gameObject.activeInHierarchy)
+        {
+            return;
+        }
+
+        Rect rect = new Rect((width - 420f) * 0.5f, 56f, 420f, 20f);
+        Color previous = GUI.color;
+        GUI.color = new Color(0f, 0f, 0f, 0.65f);
+        GUI.DrawTexture(rect, Texture2D.whiteTexture);
+
+        float fraction = boss.Health.Max > 0 ? (float)boss.Health.Current / boss.Health.Max : 0f;
+        GUI.color = new Color(0.7f, 0.1f, 0.6f, 1f);
+        GUI.DrawTexture(new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * fraction, rect.height - 4f), Texture2D.whiteTexture);
+        GUI.color = previous;
+        GUI.Label(new Rect(rect.x, rect.y - 30f, rect.width, 28f), "CHEFE", hintStyle);
     }
 
     private string PowerText()

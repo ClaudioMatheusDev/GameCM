@@ -95,6 +95,7 @@ public class PlayerController : MonoBehaviour
         if (!IsDead)
         {
             SfxPlayer.Play(Sfx.PlayerHurt);
+            ImpactFx.Play(Fx.PlayerHurt);
             hurtTimer = settings.hurtDuration;
             knockbackVelocity = Mathf.Sign(transform.position.x - sourceX) * settings.hurtKnockback;
         }
@@ -289,13 +290,25 @@ public class PlayerController : MonoBehaviour
         Physics2D.SyncTransforms();
         hitBuffer.Clear();
         Physics2D.OverlapBox(center, size, 0f, hitFilter, hitBuffer);
+        bool anyHit = false;
+        bool anyKill = false;
         for (int i = 0; i < hitBuffer.Count; i++)
         {
             ZombieController zombie = hitBuffer[i].GetComponent<ZombieController>();
-            if (zombie != null)
+            if (zombie != null && zombie.ApplyHit(damage, knockback))
             {
-                zombie.ApplyHit(damage, knockback);
+                anyHit = true;
+                anyKill |= !zombie.IsAlive && !zombie.IsBoss;
             }
+        }
+
+        if (anyKill)
+        {
+            ImpactFx.Play(Fx.Kill);
+        }
+        else if (anyHit)
+        {
+            ImpactFx.Play(attackIsPower ? Fx.PowerHit : Fx.PunchHit);
         }
     }
 

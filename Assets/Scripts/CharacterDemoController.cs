@@ -36,6 +36,11 @@ public class CharacterDemoController : MonoBehaviour
         }
 
         GetOrAdd<SfxPlayer>().Configure(sounds);
+        GetOrAdd<HitStop>();
+        if (stageCamera.GetComponent<CameraShake>() == null)
+        {
+            stageCamera.gameObject.AddComponent<CameraShake>();
+        }
 
         player = GetOrAdd<PlayerController>();
         player.Configure(playerSettings, stateNames);
