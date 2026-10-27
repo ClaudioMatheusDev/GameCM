@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Raiz da cena: guarda as referencias montadas pelo editor (fundos, sprites do zumbi, audio)
+/// Raiz da cena: guarda as referencias montadas pelo editor (fundos, sprites do zumbi, audio e efeitos)
 /// e liga os componentes de jogo: PlayerController, StageManager, ScoreTracker, GameHud e GameMenus.
 /// </summary>
 public class CharacterDemoController : MonoBehaviour
@@ -14,6 +14,7 @@ public class CharacterDemoController : MonoBehaviour
     [SerializeField] private Sprite[] zombieHurtFrames = null;
     [SerializeField] private Sprite[] zombieDeathFrames = null;
     [SerializeField] private string[] stateNames = { "Idle", "Walk", "Run", "Jump", "Punch", "Power", "Hurt", "Dead" };
+    [SerializeField] private SoundBank sounds = new SoundBank();
     [SerializeField] private PlayerTuning playerSettings = new PlayerTuning();
     [SerializeField] private ZombieSettings zombieSettings = new ZombieSettings();
     [SerializeField] private StageSettings stageSettings = new StageSettings();
@@ -33,6 +34,8 @@ public class CharacterDemoController : MonoBehaviour
         {
             animator = GetComponent<Animator>();
         }
+
+        GetOrAdd<SfxPlayer>().Configure(sounds);
 
         player = GetOrAdd<PlayerController>();
         player.Configure(playerSettings, stateNames);

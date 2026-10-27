@@ -366,6 +366,14 @@ MonoBehaviour:
   - Power
   - Hurt
   - Dead
+  sounds:
+    punch: {fileID: 8300000, guid: 60ffd689205a4a1bab51d8d2dd5c2b6c, type: 3}
+    power: {fileID: 8300000, guid: 27b8f93e121041f5a9638dd56ffe3b83, type: 3}
+    jump: {fileID: 8300000, guid: bf2efd69a48948568a2301fe9b477335, type: 3}
+    hurt: {fileID: 8300000, guid: 356a1541c1004354bc9c716364119e65, type: 3}
+    death: {fileID: 8300000, guid: dda6397e1ad04724b97385ec23fc8d42, type: 3}
+    uiClick: {fileID: 8300000, guid: 777f431691804f07953912debdc3def0, type: 3}
+    uiSelect: {fileID: 8300000, guid: c46e65dba3754f16ab0058cf4691347f, type: 3}
   playerSettings:
     stageStartX: -10.5
     stageEndX: 10.5

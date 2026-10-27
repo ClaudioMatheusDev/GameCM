@@ -10,6 +10,6 @@
 Arquivos principais:
 
 - `Assets/CharacterDemo/CharacterSpriteSheet.png`
-- `Assets/CharacterDemo/Audio/BeepBox-Song.mp3`
+- `Assets/CharacterDemo/Audio/AudioBackground.mp3`
 - `Assets/Scenes/CharacterDemoScene.unity`
 - `Assets/CharacterDemo/JustificativaTecnica.md`

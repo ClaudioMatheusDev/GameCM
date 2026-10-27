@@ -38,6 +38,7 @@ Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principa
 | `Assets/Sprites` | Frames do personagem por animacao |
 | `Assets/Zombie` | Frames do zumbi (`walk_left`, `hurt/up`, `Death`) |
 | `Assets/Backgrounds` | Fundos `Stage1` a `Stage4` |
+| `Assets/CharacterDemo/Audio` | Musica (`AudioBackground.mp3`) e efeitos em `Sons/` |
 
 ### Scripts
 
@@ -51,6 +52,7 @@ Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principa
 - `GameHud`: HUD de jogo em IMGUI (vida, fase, pontos, combo, tempo).
 - `GameMenus` / `UiFactory`: telas em uGUI criadas em codigo.
 - `ScoreTracker` / `ScoreCalculator`: pontuacao, combo e estrelas.
+- `SfxPlayer`: efeitos sonoros (soco, poder, pulo, dano, morte e menus) com cortes por duracao maxima.
 - `GameProgress` / `GameSession`: dados salvos e estado entre recarregamentos de cena.
 
 ## Testes

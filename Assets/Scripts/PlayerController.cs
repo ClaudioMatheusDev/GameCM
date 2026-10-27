@@ -94,6 +94,7 @@ public class PlayerController : MonoBehaviour
         attackTimer = 0f;
         if (!IsDead)
         {
+            SfxPlayer.Play(Sfx.PlayerHurt);
             hurtTimer = settings.hurtDuration;
             knockbackVelocity = Mathf.Sign(transform.position.x - sourceX) * settings.hurtKnockback;
         }
@@ -195,6 +196,7 @@ public class PlayerController : MonoBehaviour
         if (input.JumpPressed && jumpTimer >= settings.jumpDuration)
         {
             jumpTimer = 0f;
+            SfxPlayer.Play(Sfx.Jump);
         }
 
         if (attackTimer > 0f)
@@ -259,6 +261,7 @@ public class PlayerController : MonoBehaviour
         attackTimer = duration;
         attackIsPower = isPower;
         attackHitDone = false;
+        SfxPlayer.Play(isPower ? Sfx.Power : Sfx.Punch);
     }
 
     private void UpdateAttack(float deltaTime)
@@ -310,6 +313,7 @@ public class PlayerController : MonoBehaviour
     private void OnHealthDied()
     {
         attackTimer = 0f;
+        SfxPlayer.Play(Sfx.PlayerDeath);
         Died?.Invoke();
     }
 

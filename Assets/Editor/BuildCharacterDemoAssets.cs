@@ -14,7 +14,8 @@ public static class BuildCharacterDemoAssets
     private const string GeneratedRoot = "Assets/CharacterDemo";
     private const string AnimationRoot = GeneratedRoot + "/Animations";
     private const string AudioRoot = GeneratedRoot + "/Audio";
-    private const string ThemeAudioPath = AudioRoot + "/BeepBox-Song.mp3";
+    private const string ThemeAudioPath = AudioRoot + "/AudioBackground.mp3";
+    private const string SfxRoot = AudioRoot + "/Sons";
     private const string SceneRoot = "Assets/Scenes";
     private const string BackgroundRoot = "Assets/Backgrounds";
     private const string ZombieRoot = "Assets/Zombie";
@@ -66,7 +67,7 @@ public static class BuildCharacterDemoAssets
         Sprite[] zombieWalk = LoadZombieFrames(ZombieWalkRoot);
         Sprite[] zombieHurt = LoadZombieFrames(ZombieHurtRoot);
         Sprite[] zombieDeath = LoadZombieFrames(ZombieDeathRoot);
-        CreateDemoScene(controller, theme, backgrounds, zombieWalk, zombieHurt, zombieDeath);
+        CreateDemoScene(controller, theme, backgrounds, zombieWalk, zombieHurt, zombieDeath, LoadSoundBank());
         RegisterSceneInBuildSettings();
 
         AssetDatabase.SaveAssets();
@@ -347,6 +348,30 @@ public static class BuildCharacterDemoAssets
         return clip;
     }
 
+    private static readonly string[] SoundFields = { "punch", "power", "jump", "hurt", "death", "uiClick", "uiSelect" };
+
+    private static readonly string[] SoundFiles =
+    {
+        "punch-song.mp3", "power-song.mp3", "JumpSonge.mp3", "hurt-song.mp3", "death-song.mp3",
+        "menu-click.wav", "menu-select.wav"
+    };
+
+    private static AudioClip[] LoadSoundBank()
+    {
+        return SoundFiles.Select(file =>
+        {
+            string path = SfxRoot + "/" + file;
+            AssetDatabase.ImportAsset(path);
+            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            if (clip == null)
+            {
+                throw new FileNotFoundException("Efeito sonoro nao encontrado.", path);
+            }
+
+            return clip;
+        }).ToArray();
+    }
+
     private static AudioClip LoadThemeAudio()
     {
         AssetDatabase.ImportAsset(ThemeAudioPath);
@@ -365,7 +390,8 @@ public static class BuildCharacterDemoAssets
         Sprite[] backgrounds,
         Sprite[] zombieWalk,
         Sprite[] zombieHurt,
-        Sprite[] zombieDeath)
+        Sprite[] zombieDeath,
+        AudioClip[] sounds)
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "CharacterDemoScene";
@@ -418,6 +444,10 @@ public static class BuildCharacterDemoAssets
         AssignSprites(serializedDemo.FindProperty("zombieHurtFrames"), zombieHurt);
         AssignSprites(serializedDemo.FindProperty("zombieDeathFrames"), zombieDeath);
         serializedDemo.FindProperty("stageSettings.zombieHeightRatio").floatValue = 0.5f;
+        for (int i = 0; i < SoundFields.Length; i++)
+        {
+            serializedDemo.FindProperty("sounds." + SoundFields[i]).objectReferenceValue = sounds[i];
+        }
 
         serializedDemo.ApplyModifiedProperties();
 

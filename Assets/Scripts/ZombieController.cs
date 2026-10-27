@@ -207,6 +207,7 @@ public class ZombieController : MonoBehaviour
         }
 
         state = State.Hurt;
+        SfxPlayer.Play(Sfx.ZombieHurt);
         stateTimer = settings.hurtDuration;
         if (frames.Hurt != null && frames.Hurt.Length > 0)
         {
@@ -217,6 +218,7 @@ public class ZombieController : MonoBehaviour
     private void OnDied()
     {
         state = State.Dying;
+        SfxPlayer.Play(Sfx.ZombieDeath);
         stateTimer = 0f;
         hitBox.enabled = false;
         if (frames.Death != null && frames.Death.Length > 0)
