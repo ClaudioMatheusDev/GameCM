@@ -10,25 +10,28 @@ using UnityEngine.SceneManagement;
 
 public static class BuildCharacterDemoAssets
 {
-    private const string SpriteRoot = "Assets/spritsheet";
+    private const string SpriteRoot = "Assets/Sprites";
     private const string GeneratedRoot = "Assets/CharacterDemo";
     private const string AnimationRoot = GeneratedRoot + "/Animations";
     private const string AudioRoot = GeneratedRoot + "/Audio";
     private const string ThemeAudioPath = AudioRoot + "/BeepBox-Song.mp3";
     private const string SceneRoot = "Assets/Scenes";
-    private const string BackgroundRoot = "Assets/Fundos";
+    private const string BackgroundRoot = "Assets/Backgrounds";
     private const string ZombieRoot = "Assets/Zombie";
     private const string ZombieWalkRoot = ZombieRoot + "/walk_left";
+    private const string ZombieHurtRoot = ZombieRoot + "/hurt/up";
+    private const string ZombieDeathRoot = ZombieRoot + "/Death";
+    private const string ScenePath = SceneRoot + "/CharacterDemoScene.unity";
     private const float PixelsPerUnit = 128f;
     private const float BackgroundPixelsPerUnit = 50f;
     private const float ZombiePixelsPerUnit = 100f;
     private const int SpriteSheetCellSize = 256;
     private static readonly string[] BackgroundPaths =
     {
-        BackgroundRoot + "/Init_cenario.jpg",
-        BackgroundRoot + "/Seconde_cenario.jpg",
-        BackgroundRoot + "/Thirt_Cenario.jpg",
-        BackgroundRoot + "/four_cenario.jpg"
+        BackgroundRoot + "/Stage1.jpg",
+        BackgroundRoot + "/Stage2.jpg",
+        BackgroundRoot + "/Stage3.jpg",
+        BackgroundRoot + "/Stage4.jpg"
     };
 
     private static readonly MoveSet[] Moves =
@@ -60,8 +63,11 @@ public static class BuildCharacterDemoAssets
         AnimatorController controller = CreateAnimationsAndController();
         AudioClip theme = LoadThemeAudio();
         Sprite[] backgrounds = LoadBackgroundSprites();
-        Sprite[] zombieFrames = LoadZombieWalkFrames();
-        CreateDemoScene(controller, theme, backgrounds, zombieFrames);
+        Sprite[] zombieWalk = LoadZombieFrames(ZombieWalkRoot);
+        Sprite[] zombieHurt = LoadZombieFrames(ZombieHurtRoot);
+        Sprite[] zombieDeath = LoadZombieFrames(ZombieDeathRoot);
+        CreateDemoScene(controller, theme, backgrounds, zombieWalk, zombieHurt, zombieDeath);
+        RegisterSceneInBuildSettings();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -191,14 +197,14 @@ public static class BuildCharacterDemoAssets
         return backgrounds;
     }
 
-    private static IEnumerable<string> GetZombieWalkPaths()
+    private static IEnumerable<string> GetZombiePaths(string root)
     {
-        if (!Directory.Exists(ZombieWalkRoot))
+        if (!Directory.Exists(root))
         {
-            throw new DirectoryNotFoundException("Pasta de sprites do zumbi nao encontrada: " + ZombieWalkRoot);
+            throw new DirectoryNotFoundException("Pasta de sprites do zumbi nao encontrada: " + root);
         }
 
-        string[] paths = Directory.GetFiles(ZombieWalkRoot, "*.png")
+        string[] paths = Directory.GetFiles(root, "*.png")
             .OrderBy(path => int.TryParse(Path.GetFileNameWithoutExtension(path), out int frame)
                 ? frame
                 : int.MaxValue)
@@ -206,7 +212,7 @@ public static class BuildCharacterDemoAssets
 
         if (paths.Length == 0)
         {
-            throw new FileNotFoundException("Nenhum quadro de caminhada do zumbi foi encontrado.", ZombieWalkRoot);
+            throw new FileNotFoundException("Nenhum quadro do zumbi foi encontrado.", root);
         }
 
         return paths.Select(path => path.Replace("\\", "/"));
@@ -214,7 +220,7 @@ public static class BuildCharacterDemoAssets
 
     private static void ConfigureZombieSprites()
     {
-        foreach (string path in GetZombieWalkPaths())
+        foreach (string path in new[] { ZombieWalkRoot, ZombieHurtRoot, ZombieDeathRoot }.SelectMany(GetZombiePaths))
         {
             TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null)
@@ -239,19 +245,24 @@ public static class BuildCharacterDemoAssets
         }
     }
 
-    private static Sprite[] LoadZombieWalkFrames()
+    private static Sprite[] LoadZombieFrames(string root)
     {
-        Sprite[] frames = GetZombieWalkPaths()
+        Sprite[] frames = GetZombiePaths(root)
             .Select(path => AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>().FirstOrDefault())
             .Where(sprite => sprite != null)
             .ToArray();
 
         if (frames.Length == 0)
         {
-            throw new InvalidDataException("Os quadros do zumbi nao foram importados como sprites.");
+            throw new InvalidDataException("Os quadros do zumbi nao foram importados como sprites: " + root);
         }
 
         return frames;
+    }
+
+    private static void RegisterSceneInBuildSettings()
+    {
+        EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
     }
 
     private static AnimatorController CreateAnimationsAndController()
@@ -352,7 +363,9 @@ public static class BuildCharacterDemoAssets
         AnimatorController controller,
         AudioClip theme,
         Sprite[] backgrounds,
-        Sprite[] zombieFrames)
+        Sprite[] zombieWalk,
+        Sprite[] zombieHurt,
+        Sprite[] zombieDeath)
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         scene.name = "CharacterDemoScene";
@@ -401,16 +414,23 @@ public static class BuildCharacterDemoAssets
             backgroundArray.GetArrayElementAtIndex(i).objectReferenceValue = backgrounds[i];
         }
 
-        SerializedProperty zombieFrameArray = serializedDemo.FindProperty("zombieWalkFrames");
-        zombieFrameArray.arraySize = zombieFrames.Length;
-        for (int i = 0; i < zombieFrames.Length; i++)
-        {
-            zombieFrameArray.GetArrayElementAtIndex(i).objectReferenceValue = zombieFrames[i];
-        }
+        AssignSprites(serializedDemo.FindProperty("zombieWalkFrames"), zombieWalk);
+        AssignSprites(serializedDemo.FindProperty("zombieHurtFrames"), zombieHurt);
+        AssignSprites(serializedDemo.FindProperty("zombieDeathFrames"), zombieDeath);
+        serializedDemo.FindProperty("stageSettings.zombieHeightRatio").floatValue = 0.5f;
 
         serializedDemo.ApplyModifiedProperties();
 
-        EditorSceneManager.SaveScene(scene, SceneRoot + "/CharacterDemoScene.unity");
+        EditorSceneManager.SaveScene(scene, ScenePath);
+    }
+
+    private static void AssignSprites(SerializedProperty array, Sprite[] sprites)
+    {
+        array.arraySize = sprites.Length;
+        for (int i = 0; i < sprites.Length; i++)
+        {
+            array.GetArrayElementAtIndex(i).objectReferenceValue = sprites[i];
+        }
     }
 
     private static IEnumerable<string> GetFramePaths(MoveSet move)
@@ -448,47 +468,6 @@ public static class BuildCharacterDemoAssets
                 int sourceX = Mathf.Clamp(Mathf.FloorToInt(x / (float)width * source.width), 0, source.width - 1);
                 target.SetPixel(startX + x, startY + y, source.GetPixel(sourceX, sourceY));
             }
-        }
-    }
-
-    private static double MidiToFrequency(int midi)
-    {
-        return 440.0 * Math.Pow(2.0, (midi - 69) / 12.0);
-    }
-
-    private static double Clamp(double value, double min, double max)
-    {
-        if (value < min)
-        {
-            return min;
-        }
-
-        return value > max ? max : value;
-    }
-
-    private static void WriteWav(string path, short[] samples, int sampleRate)
-    {
-        using BinaryWriter writer = new BinaryWriter(File.Create(path));
-        int byteRate = sampleRate * 2;
-        int dataLength = samples.Length * 2;
-
-        writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
-        writer.Write(36 + dataLength);
-        writer.Write(System.Text.Encoding.ASCII.GetBytes("WAVE"));
-        writer.Write(System.Text.Encoding.ASCII.GetBytes("fmt "));
-        writer.Write(16);
-        writer.Write((short)1);
-        writer.Write((short)1);
-        writer.Write(sampleRate);
-        writer.Write(byteRate);
-        writer.Write((short)2);
-        writer.Write((short)16);
-        writer.Write(System.Text.Encoding.ASCII.GetBytes("data"));
-        writer.Write(dataLength);
-
-        foreach (short sample in samples)
-        {
-            writer.Write(sample);
         }
     }
 
