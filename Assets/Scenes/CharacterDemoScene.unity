@@ -374,6 +374,7 @@ MonoBehaviour:
     death: {fileID: 8300000, guid: dda6397e1ad04724b97385ec23fc8d42, type: 3}
     uiClick: {fileID: 8300000, guid: 777f431691804f07953912debdc3def0, type: 3}
     uiSelect: {fileID: 8300000, guid: c46e65dba3754f16ab0058cf4691347f, type: 3}
+    pickup: {fileID: 8300000, guid: a4e073d28ec54277a6e7161306d4ab0b, type: 3}
   playerSettings:
     stageStartX: -10.5
     stageEndX: 10.5

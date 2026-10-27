@@ -18,6 +18,8 @@ Abra o projeto na Unity, abra `Assets/Scenes/CharacterDemoScene.unity` e aperte 
 
 **Inimigos:** zumbis normais, rapidos (fase 2 em diante), resistentes (fase 3 em diante, causam 2 de dano) e, na fase 4, um **chefe** com barra de vida que faz investidas (o corpo fica vermelho antes de avancar). Zumbis mais fortes valem mais pontos.
 
+**Itens de cura:** zumbis podem soltar um coracao (mais chance nos resistentes e quando voce esta com pouca vida). Encoste para recuperar vida; com a vida cheia o item espera no chao e some depois de alguns segundos.
+
 **Objetivo:** elimine todos os zumbis da fase e va ate a borda direita da tela para avancar. Venca a fase 4 para ganhar. Voce tem 5 pontos de vida; zumbis causam dano ao encostar (pular ajuda a desviar) e voce fica invulneravel por um instante depois de ser atingido.
 
 ## Telas
@@ -56,6 +58,8 @@ Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principa
 - `ScoreTracker` / `ScoreCalculator`: pontuacao, combo e estrelas.
 - `ZombieVariant` / `ZombieSpawnTable`: tipos de zumbi (normal, rapido, resistente, chefe) e sorteio por fase.
 - `CameraShake` / `HitStop` / `ImpactFx`: tremor de camera e pausa curta ao acertar golpes, matar zumbis, levar dano e nas investidas do chefe.
+- `HealthPickup` / `PixelSprites`: item de cura (sprite gerado em codigo).
+- `ParticleFx`: particulas (faiscas, sangue, poeira, cura, explosao do chefe) em um unico `ParticleSystem` compartilhado.
 - `SfxPlayer`: efeitos sonoros (soco, poder, pulo, dano, morte e menus) com cortes por duracao maxima.
 - `GameProgress` / `GameSession`: dados salvos e estado entre recarregamentos de cena.
 

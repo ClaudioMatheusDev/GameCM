@@ -11,4 +11,5 @@ Projeto Unity 6 (6000.4.8f1), 2D/URP, Input System. Leia o `README.md` para cont
 - Efeitos sonoros: toque sempre via `SfxPlayer.Play(Sfx.X)`; os clips ficam em `SoundBank` (campo `sounds` do `CharacterDemoController`, atribuido tambem em `BuildCharacterDemoAssets`). Os mp3 em `Sons/` sao longos, por isso `SfxPlayer` corta cada efeito por duracao maxima.
 - Efeitos de impacto sempre via `ImpactFx.Play(Fx.X)`; ao pausar, `GameMenus` cancela o `HitStop` antes de mexer em `Time.timeScale`.
 - Novos tipos de zumbi: adicione em `ZombieType`/`ZombieVariant.Get` e, se aparecer por sorteio, em `ZombieSpawnTable.Roll`; o chefe e gerado a parte em `StageManager`.
+- Particulas sempre via `ParticleFx.X(...)` (sao seguras sem a instancia). Itens de cura nascem em `StageManager.TryDropPickup`; a chance e o valor de cura ficam em `ZombieVariant`.
 - Testes que usam `GameProgress` devem trocar `GameProgress.KeyPrefix` para nao apagar o progresso real.

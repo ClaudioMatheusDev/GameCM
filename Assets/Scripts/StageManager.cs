@@ -30,6 +30,7 @@ public class StageSettings
 public class StageManager : MonoBehaviour
 {
     private const float EdgeTolerance = 0.05f;
+    private const int LowHealthThreshold = 2;
 
     private SpriteRenderer background;
     private Sprite[] backgrounds;
@@ -49,6 +50,7 @@ public class StageManager : MonoBehaviour
     private int zombiesKilled;
     private float spawnTimer;
     private bool bossPending;
+    private readonly List<HealthPickup> pickups = new List<HealthPickup>();
 
     private readonly List<ZombieController> active = new List<ZombieController>();
     private readonly Stack<ZombieController> pool = new Stack<ZombieController>();
@@ -139,6 +141,7 @@ public class StageManager : MonoBehaviour
         StageIndex++;
         SetBackground(backgrounds[StageIndex]);
         ClearZombies();
+        ClearPickups();
         BeginStage();
         player.ResetToStageStart();
     }
@@ -249,6 +252,7 @@ public class StageManager : MonoBehaviour
             ActiveBoss = null;
         }
 
+        TryDropPickup(zombie);
         ZombieKilled?.Invoke(zombie);
         if (StageCleared)
         {
@@ -262,6 +266,48 @@ public class StageManager : MonoBehaviour
         {
             pool.Push(zombie);
         }
+    }
+
+    private void TryDropPickup(ZombieController zombie)
+    {
+        ZombieVariant variant = zombie.Variant;
+        if (variant.DropChance <= 0f)
+        {
+            return;
+        }
+
+        // Com pouca vida a chance de o item cair dobra.
+        float chance = variant.DropChance * (player.Health.Current <= LowHealthThreshold ? 2f : 1f);
+        if (UnityEngine.Random.value >= chance)
+        {
+            return;
+        }
+
+        SpriteRenderer playerRenderer = player.GetComponent<SpriteRenderer>();
+        HealthPickup pickup = HealthPickup.Create(
+            zombie.FeetPosition,
+            player,
+            variant.HealAmount,
+            playerRenderer.sortingLayerID,
+            playerRenderer.sortingOrder - 1);
+        pickup.Removed += OnPickupRemoved;
+        pickups.Add(pickup);
+    }
+
+    private void OnPickupRemoved(HealthPickup pickup)
+    {
+        pickups.Remove(pickup);
+    }
+
+    private void ClearPickups()
+    {
+        for (int i = pickups.Count - 1; i >= 0; i--)
+        {
+            pickups[i].Removed -= OnPickupRemoved;
+            Destroy(pickups[i].gameObject);
+        }
+
+        pickups.Clear();
     }
 
     private void ClearZombies()
