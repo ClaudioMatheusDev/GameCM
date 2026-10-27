@@ -44,6 +44,8 @@ public class GameMenus : MonoBehaviour
 
     private Text volumeLabel;
     private Button fullscreenButton;
+    private Button difficultyButton;
+    private Difficulty loadedDifficulty;
     private Text resultTitle;
     private Text resultBody;
     private GameObject introRoot;
@@ -60,6 +62,7 @@ public class GameMenus : MonoBehaviour
         score = scoreTracker;
         hud = gameHud;
 
+        loadedDifficulty = GameProgress.Difficulty;
         ApplySavedSettings();
         UiFactory.EnsureEventSystem();
         BuildAll();
@@ -88,7 +91,7 @@ public class GameMenus : MonoBehaviour
 
     private void OnDestroy()
     {
-        Time.timeScale = 1f;
+        GameClock.Reset();
         if (stage != null)
         {
             stage.StateChanged -= OnStateChanged;
@@ -149,7 +152,7 @@ public class GameMenus : MonoBehaviour
         }
 
         bool paused = screen != MenuScreen.None;
-        Time.timeScale = paused ? 0f : 1f;
+        GameClock.Paused = paused;
         player.InputLocked = paused || stage.State != GameState.Playing;
         hud.Visible = !paused;
 
@@ -181,7 +184,12 @@ public class GameMenus : MonoBehaviour
 
     private void StartGame()
     {
-        if (stage.StageIndex == 0)
+        // A dificuldade vale desde o carregamento da cena; se mudou, recarrega.
+        if (GameProgress.Difficulty != loadedDifficulty)
+        {
+            GameSession.Restart(0, false);
+        }
+        else if (stage.StageIndex == 0)
         {
             Open(MenuScreen.None);
             ShowIntro(0);
@@ -216,6 +224,13 @@ public class GameMenus : MonoBehaviour
         GameProgress.Volume = volume;
         GameProgress.Save();
         AudioListener.volume = volume;
+        RefreshDynamicTexts();
+    }
+
+    private void CycleDifficulty()
+    {
+        GameProgress.Difficulty = DifficultyRules.Next(GameProgress.Difficulty);
+        GameProgress.Save();
         RefreshDynamicTexts();
     }
 
@@ -304,6 +319,9 @@ public class GameMenus : MonoBehaviour
     {
         volumeLabel.text = "Volume: " + Mathf.RoundToInt(GameProgress.Volume * 100f) + "%";
         UiFactory.SetButtonText(fullscreenButton, "Tela cheia: " + (Screen.fullScreen ? "Sim" : "Nao"));
+        Difficulty difficulty = GameProgress.Difficulty;
+        string pending = difficulty != loadedDifficulty ? " (ao reiniciar)" : string.Empty;
+        UiFactory.SetButtonText(difficultyButton, "Dificuldade: " + DifficultyRules.Label(difficulty) + pending);
 
         int unlocked = GameProgress.UnlockedStage;
         for (int i = 0; i < stageButtons.Count; i++)
@@ -390,6 +408,7 @@ public class GameMenus : MonoBehaviour
         UiFactory.CreateButton(row, "+", () => ChangeVolume(VolumeStep), 70f);
 
         fullscreenButton = UiFactory.CreateButton(panel, "Tela cheia", ToggleFullscreen);
+        difficultyButton = UiFactory.CreateButton(panel, "Dificuldade", CycleDifficulty, 480f);
         AddButton(panel, MenuScreen.Options, "Voltar", () => Open(returnTo));
     }
 

@@ -34,6 +34,9 @@ public class PlayerController : MonoBehaviour
 {
     private const float MoveDeadZone = 0.2f;
     private const float BlinkPeriod = 0.16f;
+    private const float PowerReadyFlashSeconds = 0.6f;
+    private const float AirborneSortingHeight = 0.2f;
+    private static readonly Color PowerReadyColor = new Color(1f, 0.9f, 0.4f, 1f);
     private static readonly int StateParameter = Animator.StringToHash("State");
 
     private PlayerTuning settings;
@@ -52,6 +55,8 @@ public class PlayerController : MonoBehaviour
     private bool attackIsPower;
     private string activeAttackState;
     private float powerCooldownTimer;
+    private float powerReadyFlash;
+    private int baseSortingOrder;
     private float hurtTimer;
     private float knockbackVelocity;
     private float facing = 1f;
@@ -64,6 +69,9 @@ public class PlayerController : MonoBehaviour
     public bool IsDead => health != null && health.IsDead;
     public bool InputLocked { get; set; }
     public float PowerCooldownRemaining => powerCooldownTimer;
+
+    /// <summary>Ordem de desenho do jogador no chao (sobe temporariamente durante o pulo).</summary>
+    public int BaseSortingOrder => baseSortingOrder;
 
     /// <summary>Altura do jogador acima do chao (0 em solo, sobe durante o pulo).</summary>
     public float AirHeight => transform.position.y - groundY;
@@ -82,7 +90,10 @@ public class PlayerController : MonoBehaviour
         animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         health = GetComponent<Health>();
-        health.Initialize(settings.maxHealth, settings.invulnerabilityDuration);
+        health.Initialize(
+            Mathf.Max(1, settings.maxHealth + DifficultyRules.Get(GameProgress.Difficulty).PlayerHealthBonus),
+            settings.invulnerabilityDuration);
+        baseSortingOrder = spriteRenderer.sortingOrder;
         health.Died += OnHealthDied;
 
         hitFilter = new ContactFilter2D { useTriggers = true, useLayerMask = false };
@@ -151,7 +162,16 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        powerCooldownTimer = Mathf.Max(0f, powerCooldownTimer - deltaTime);
+        if (powerCooldownTimer > 0f)
+        {
+            powerCooldownTimer = Mathf.Max(0f, powerCooldownTimer - deltaTime);
+            if (powerCooldownTimer <= 0f)
+            {
+                powerReadyFlash = PowerReadyFlashSeconds;
+            }
+        }
+
+        powerReadyFlash = Mathf.Max(0f, powerReadyFlash - deltaTime);
         hurtTimer = Mathf.Max(0f, hurtTimer - deltaTime);
         bool isHurt = hurtTimer > 0f;
         bool canAct = !InputLocked && !isHurt;
@@ -198,6 +218,8 @@ public class PlayerController : MonoBehaviour
             UpdateAttack(deltaTime);
         }
 
+        // No ar o jogador passa na frente dos zumbis (que ficam um nivel acima dele no chao).
+        spriteRenderer.sortingOrder = baseSortingOrder + (AirHeight > AirborneSortingHeight ? 2 : 0);
         UpdateBlink();
         ApplyState(ChooseState(isHurt, attacking, isJumping, direction, sprinting));
     }
@@ -323,7 +345,7 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateBlink()
     {
-        Color color = Color.white;
+        Color color = Color.Lerp(Color.white, PowerReadyColor, powerReadyFlash / PowerReadyFlashSeconds);
         if (health.IsInvulnerable && Mathf.Repeat(Time.time, BlinkPeriod) < BlinkPeriod * 0.5f)
         {
             color.a = 0.35f;

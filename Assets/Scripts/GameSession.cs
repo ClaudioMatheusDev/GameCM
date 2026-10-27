@@ -18,7 +18,7 @@ public static class GameSession
     {
         StartStage = Mathf.Max(0, stageIndex);
         SkipMenu = !showMenu;
-        Time.timeScale = 1f;
+        GameClock.Reset();
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

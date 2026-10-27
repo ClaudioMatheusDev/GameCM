@@ -50,9 +50,12 @@ public class StageManager : MonoBehaviour
     private int zombiesKilled;
     private float spawnTimer;
     private bool bossPending;
+    private DifficultyRules rules;
+    private SpriteRenderer playerRenderer;
 
     private readonly List<ZombieController> active = new List<ZombieController>();
     private readonly Stack<ZombieController> pool = new Stack<ZombieController>();
+    private readonly List<HealthPickup> pickups = new List<HealthPickup>();
 
     public event Action<GameState> StateChanged;
     public event Action<int> StageBegan;
@@ -91,7 +94,8 @@ public class StageManager : MonoBehaviour
         endX = stageEndX;
         groundY = player.transform.position.y;
 
-        SpriteRenderer playerRenderer = player.GetComponent<SpriteRenderer>();
+        rules = DifficultyRules.Get(GameProgress.Difficulty);
+        playerRenderer = player.GetComponent<SpriteRenderer>();
         groundFeetY = playerRenderer.bounds.min.y;
         zombieScale = frames.Walk != null && frames.Walk.Length > 0
             ? playerRenderer.bounds.size.y * settings.zombieHeightRatio / frames.Walk[0].bounds.size.y
@@ -141,6 +145,7 @@ public class StageManager : MonoBehaviour
         StageIndex++;
         SetBackground(backgrounds[StageIndex]);
         ClearZombies();
+        ClearPickups();
         BeginStage();
         player.ResetToStageStart();
     }
@@ -149,7 +154,7 @@ public class StageManager : MonoBehaviour
     {
         int baseCount = UnityEngine.Random.Range(settings.minZombies, settings.maxZombies + 1);
         zombieTarget = frames.Walk != null && frames.Walk.Length > 0
-            ? baseCount + StageIndex * settings.extraZombiesPerStage
+            ? rules.ScaleZombieCount(baseCount + StageIndex * settings.extraZombiesPerStage)
             : 0;
         bossPending = IsBossStage && zombieTarget > 0;
         if (bossPending)
@@ -188,7 +193,7 @@ public class StageManager : MonoBehaviour
         bool isBoss = bossPending && zombiesSpawned == zombieTarget - 1;
         ZombieType type = isBoss ? ZombieType.Boss : ZombieSpawnTable.Roll(StageIndex, UnityEngine.Random.value);
         Vector3 position = new Vector3(PickSpawnX(), groundY, player.transform.position.z);
-        zombie.Setup(frames, zombieSettings, ZombieVariant.Get(type), player, position, zombieScale, startX, endX, active);
+        zombie.Setup(frames, zombieSettings, ZombieVariant.Get(type), player, position, zombieScale, startX, endX, active, rules);
         AlignFeetToGround(zombie);
         active.Add(zombie);
 
@@ -211,11 +216,10 @@ public class StageManager : MonoBehaviour
 
     private ZombieController CreateZombie()
     {
-        SpriteRenderer playerRenderer = player.GetComponent<SpriteRenderer>();
         GameObject zombieObject = new GameObject("Zombie");
         SpriteRenderer zombieRenderer = zombieObject.AddComponent<SpriteRenderer>();
         zombieRenderer.sortingLayerID = playerRenderer.sortingLayerID;
-        zombieRenderer.sortingOrder = playerRenderer.sortingOrder + 1;
+        zombieRenderer.sortingOrder = player.BaseSortingOrder + 1;
 
         ZombieController zombie = zombieObject.AddComponent<ZombieController>();
         zombie.Died += OnZombieDied;
@@ -249,6 +253,7 @@ public class StageManager : MonoBehaviour
             ActiveBoss = null;
         }
 
+        TryDropHealth(zombie);
         ZombieKilled?.Invoke(zombie);
         if (StageCleared)
         {
@@ -262,6 +267,32 @@ public class StageManager : MonoBehaviour
         {
             pool.Push(zombie);
         }
+    }
+
+    private void TryDropHealth(ZombieController zombie)
+    {
+        if (player.IsDead || (!zombie.IsBoss && UnityEngine.Random.value >= rules.HealDropChance))
+        {
+            return;
+        }
+
+        Vector3 position = zombie.transform.position;
+        position.y = groundFeetY;
+        pickups.RemoveAll(pickup => pickup == null);
+        pickups.Add(HealthPickup.Spawn(player, position, playerRenderer.sortingLayerID, player.BaseSortingOrder - 1, 1));
+    }
+
+    private void ClearPickups()
+    {
+        for (int i = 0; i < pickups.Count; i++)
+        {
+            if (pickups[i] != null)
+            {
+                Destroy(pickups[i].gameObject);
+            }
+        }
+
+        pickups.Clear();
     }
 
     private void ClearZombies()

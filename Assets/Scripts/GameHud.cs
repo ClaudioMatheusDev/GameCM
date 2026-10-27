@@ -1,25 +1,36 @@
 using UnityEngine;
+using UnityEngine.UI;
 
-/// <summary>HUD de jogo desenhado com IMGUI: vida, fase, zumbis restantes, pontuacao, combo e tempo.</summary>
+/// <summary>HUD de jogo em uGUI (criado em codigo): vida, fase, zumbis restantes, pontuacao, combo, tempo e barra do chefe.</summary>
 public class GameHud : MonoBehaviour
 {
-    private const float ReferenceHeight = 720f;
+    private const float Margin = 20f;
+    private const float LineHeight = 28f;
+    private const float BarBorder = 2f;
+    private const int FontSize = 20;
+
+    private static readonly Color BarBackColor = new Color(0f, 0f, 0f, 0.6f);
+    private static readonly Color HealthColor = new Color(0.85f, 0.15f, 0.15f, 1f);
+    private static readonly Color BossColor = new Color(0.7f, 0.1f, 0.6f, 1f);
 
     private PlayerController player;
     private StageManager stage;
     private ScoreTracker score;
-    private GUIStyle labelStyle;
-    private GUIStyle rightStyle;
-    private GUIStyle hintStyle;
+    private Canvas canvas;
 
-    // Textos em cache: so sao remontados quando o valor muda (evita lixo a cada frame do OnGUI).
-    private string stageText = "";
-    private string remainingText = "";
-    private string scoreText = "";
-    private string timeText = "";
-    private string comboText = "";
-    private string powerText = "";
-    private string healthText = "";
+    private RectTransform healthFill;
+    private Text healthText;
+    private Text stageText;
+    private Text remainingText;
+    private Text powerText;
+    private Text scoreText;
+    private Text timeText;
+    private Text comboText;
+    private Text hintText;
+    private GameObject bossRoot;
+    private RectTransform bossFill;
+
+    // Textos so sao remontados quando o valor muda (evita lixo a cada frame).
     private int stageKey = -1;
     private int remainingKey = -1;
     private int scoreKey = -1;
@@ -27,185 +38,215 @@ public class GameHud : MonoBehaviour
     private int comboKey = -1;
     private int powerKey = -2;
     private int healthKey = -1;
+    private string hintKey = string.Empty;
 
-    public bool Visible { get; set; } = true;
+    public bool Visible
+    {
+        get => canvas != null && canvas.enabled;
+        set
+        {
+            if (canvas != null)
+            {
+                canvas.enabled = value;
+            }
+        }
+    }
 
     public void Configure(PlayerController playerController, StageManager stageManager, ScoreTracker scoreTracker)
     {
         player = playerController;
         stage = stageManager;
         score = scoreTracker;
+        Build();
     }
 
-    private void OnGUI()
+    private void Update()
     {
-        if (!Visible || player == null || stage == null || score == null)
+        if (canvas == null || !canvas.enabled || player == null || stage == null || score == null)
         {
             return;
         }
 
-        EnsureStyles();
-        float scale = Screen.height / ReferenceHeight;
-        GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
-        float width = Screen.width / scale;
-        float height = ReferenceHeight;
+        UpdateHealth();
 
-        DrawHealthBar(new Rect(20f, 20f, 260f, 22f));
-        GUI.Label(new Rect(20f, 48f, 400f, 30f), StageText(), labelStyle);
-        GUI.Label(new Rect(20f, 76f, 400f, 30f), RemainingText(), labelStyle);
-        GUI.Label(new Rect(20f, 104f, 400f, 30f), PowerText(), labelStyle);
-
-        GUI.Label(new Rect(width - 420f, 20f, 400f, 30f), ScoreText(), rightStyle);
-        GUI.Label(new Rect(width - 420f, 48f, 400f, 30f), ElapsedText(), rightStyle);
-        if (score.Combo > 1)
+        int stageValue = stage.StageIndex * 100 + stage.StageCount;
+        if (Changed(ref stageKey, stageValue))
         {
-            GUI.Label(new Rect(width - 420f, 76f, 400f, 30f), ComboText(), rightStyle);
+            stageText.text = "Fase " + (stage.StageIndex + 1) + "/" + stage.StageCount;
         }
 
-        string hint = ControlsText.HudHint;
-        if (stage.State == GameState.Playing && stage.StageCleared)
+        if (Changed(ref remainingKey, stage.ZombiesRemaining))
         {
-            hint = "Fase limpa! Va ate a borda direita da tela.";
+            remainingText.text = "Zumbis restantes: " + stage.ZombiesRemaining;
         }
 
-        GUI.Label(new Rect(0f, height - 40f, width, 30f), hint, hintStyle);
-        DrawBossBar(width);
+        if (Changed(ref scoreKey, score.Score))
+        {
+            scoreText.text = "Pontos: " + score.Score;
+        }
+
+        int seconds = Mathf.FloorToInt(score.Elapsed);
+        if (Changed(ref timeKey, seconds))
+        {
+            timeText.text = "Tempo: " + (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00");
+        }
+
+        comboText.enabled = score.Combo > 1;
+        if (Changed(ref comboKey, score.Combo))
+        {
+            comboText.text = "Combo x" + score.Combo;
+        }
+
+        float remaining = player.PowerCooldownRemaining;
+        int powerTenths = remaining > 0f ? Mathf.CeilToInt(remaining * 10f) : 0;
+        if (Changed(ref powerKey, powerTenths))
+        {
+            powerText.text = powerTenths > 0 ? "Poder: " + (powerTenths / 10f).ToString("0.0") + "s" : "Poder: pronto";
+        }
+
+        string hint = stage.State == GameState.Playing && stage.StageCleared
+            ? "Fase limpa! Va ate a borda direita da tela."
+            : ControlsText.HudHint;
+        if (hint != hintKey)
+        {
+            hintKey = hint;
+            hintText.text = hint;
+        }
+
+        UpdateBoss();
     }
 
-    private void DrawHealthBar(Rect rect)
+    private void UpdateHealth()
     {
         Health health = player.Health;
-        Color previous = GUI.color;
-        GUI.color = new Color(0f, 0f, 0f, 0.6f);
-        GUI.DrawTexture(rect, Texture2D.whiteTexture);
-
         float fraction = health.Max > 0 ? (float)health.Current / health.Max : 0f;
-        GUI.color = new Color(0.85f, 0.15f, 0.15f, 1f);
-        GUI.DrawTexture(new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * fraction, rect.height - 4f), Texture2D.whiteTexture);
-        GUI.color = previous;
-        GUI.Label(rect, HealthText(health), hintStyle);
+        healthFill.anchorMax = new Vector2(fraction, 1f);
+        if (Changed(ref healthKey, health.Current * 1000 + health.Max))
+        {
+            healthText.text = health.Current + "/" + health.Max;
+        }
     }
 
-    private void DrawBossBar(float width)
+    private void UpdateBoss()
     {
         ZombieController boss = stage.ActiveBoss;
-        if (boss == null || !boss.gameObject.activeInHierarchy)
+        bool show = boss != null && boss.gameObject.activeInHierarchy;
+        if (bossRoot.activeSelf != show)
         {
-            return;
+            bossRoot.SetActive(show);
         }
 
-        Rect rect = new Rect((width - 420f) * 0.5f, 56f, 420f, 20f);
-        Color previous = GUI.color;
-        GUI.color = new Color(0f, 0f, 0f, 0.65f);
-        GUI.DrawTexture(rect, Texture2D.whiteTexture);
-
-        float fraction = boss.Health.Max > 0 ? (float)boss.Health.Current / boss.Health.Max : 0f;
-        GUI.color = new Color(0.7f, 0.1f, 0.6f, 1f);
-        GUI.DrawTexture(new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * fraction, rect.height - 4f), Texture2D.whiteTexture);
-        GUI.color = previous;
-        GUI.Label(new Rect(rect.x, rect.y - 30f, rect.width, 28f), "CHEFE", hintStyle);
+        if (show)
+        {
+            float fraction = boss.Health.Max > 0 ? (float)boss.Health.Current / boss.Health.Max : 0f;
+            bossFill.anchorMax = new Vector2(fraction, 1f);
+        }
     }
 
-    private string StageText()
+    private static bool Changed(ref int key, int newKey)
     {
-        int key = stage.StageIndex * 100 + stage.StageCount;
-        if (key != stageKey)
+        if (newKey == key)
         {
-            stageKey = key;
-            stageText = "Fase " + (stage.StageIndex + 1) + "/" + stage.StageCount;
+            return false;
         }
 
-        return stageText;
+        key = newKey;
+        return true;
     }
 
-    private string RemainingText()
+    private void Build()
     {
-        if (stage.ZombiesRemaining != remainingKey)
-        {
-            remainingKey = stage.ZombiesRemaining;
-            remainingText = "Zumbis restantes: " + remainingKey;
-        }
+        canvas = UiFactory.CreateCanvas("Game Hud", 50);
+        canvas.transform.SetParent(transform, false);
 
-        return remainingText;
+        Vector2 topLeft = new Vector2(0f, 1f);
+        Vector2 topRight = new Vector2(1f, 1f);
+        Vector2 line = new Vector2(400f, LineHeight);
+
+        healthFill = CreateBar(canvas.transform, "Health Bar", topLeft, new Vector2(Margin, -Margin), new Vector2(260f, 22f), HealthColor, out RectTransform healthBack);
+        healthText = CreateText(healthBack, "Health Text", TextAnchor.MiddleCenter, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(260f, 22f), 16);
+        StretchToParent(healthText.rectTransform);
+
+        stageText = CreateText(canvas.transform, "Stage", TextAnchor.MiddleLeft, topLeft, new Vector2(Margin, -48f), line, FontSize);
+        remainingText = CreateText(canvas.transform, "Remaining", TextAnchor.MiddleLeft, topLeft, new Vector2(Margin, -76f), line, FontSize);
+        powerText = CreateText(canvas.transform, "Power", TextAnchor.MiddleLeft, topLeft, new Vector2(Margin, -104f), line, FontSize);
+
+        scoreText = CreateText(canvas.transform, "Score", TextAnchor.MiddleRight, topRight, new Vector2(-Margin, -Margin), line, FontSize);
+        timeText = CreateText(canvas.transform, "Time", TextAnchor.MiddleRight, topRight, new Vector2(-Margin, -48f), line, FontSize);
+        comboText = CreateText(canvas.transform, "Combo", TextAnchor.MiddleRight, topRight, new Vector2(-Margin, -76f), line, FontSize);
+
+        hintText = CreateText(canvas.transform, "Hint", TextAnchor.MiddleCenter, new Vector2(0.5f, 0f), new Vector2(0f, 12f), new Vector2(1000f, LineHeight), 18);
+
+        Vector2 bossSize = new Vector2(420f, 20f);
+        bossFill = CreateBar(canvas.transform, "Boss Bar", new Vector2(0.5f, 1f), new Vector2(0f, -56f), bossSize, BossColor, out RectTransform bossBack);
+        bossRoot = bossBack.gameObject;
+        Text bossLabel = CreateText(bossBack, "Boss Label", TextAnchor.LowerCenter, new Vector2(0.5f, 1f), new Vector2(0f, 2f), new Vector2(bossSize.x, 28f), 18);
+        bossLabel.text = "CHEFE";
+        bossLabel.rectTransform.pivot = new Vector2(0.5f, 0f);
+        bossRoot.SetActive(false);
     }
 
-    private string ScoreText()
+    /// <summary>Barra com fundo escuro e preenchimento controlado por anchorMax.x.</summary>
+    private static RectTransform CreateBar(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size, Color color, out RectTransform back)
     {
-        if (score.Score != scoreKey)
-        {
-            scoreKey = score.Score;
-            scoreText = "Pontos: " + scoreKey;
-        }
+        GameObject backObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+        backObject.transform.SetParent(parent, false);
+        back = backObject.GetComponent<RectTransform>();
+        back.anchorMin = anchor;
+        back.anchorMax = anchor;
+        back.pivot = new Vector2(anchor.x, 1f);
+        back.anchoredPosition = position;
+        back.sizeDelta = size;
+        Image backImage = backObject.GetComponent<Image>();
+        backImage.color = BarBackColor;
+        backImage.raycastTarget = false;
 
-        return scoreText;
+        GameObject fillObject = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+        fillObject.transform.SetParent(back, false);
+        RectTransform fill = fillObject.GetComponent<RectTransform>();
+        fill.anchorMin = Vector2.zero;
+        fill.anchorMax = Vector2.one;
+        fill.offsetMin = new Vector2(BarBorder, BarBorder);
+        fill.offsetMax = new Vector2(-BarBorder, -BarBorder);
+        Image fillImage = fillObject.GetComponent<Image>();
+        fillImage.color = color;
+        fillImage.raycastTarget = false;
+        return fill;
     }
 
-    private string ElapsedText()
+    private static Text CreateText(Transform parent, string name, TextAnchor alignment, Vector2 anchor, Vector2 position, Vector2 size, int fontSize)
     {
-        int seconds = Mathf.FloorToInt(score.Elapsed);
-        if (seconds != timeKey)
-        {
-            timeKey = seconds;
-            timeText = "Tempo: " + (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00");
-        }
+        GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(Text), typeof(Outline));
+        textObject.transform.SetParent(parent, false);
 
-        return timeText;
+        RectTransform rect = textObject.GetComponent<RectTransform>();
+        rect.anchorMin = anchor;
+        rect.anchorMax = anchor;
+        rect.pivot = anchor;
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
+
+        Text text = textObject.GetComponent<Text>();
+        text.font = UiFactory.DefaultFont;
+        text.fontSize = fontSize;
+        text.fontStyle = FontStyle.Bold;
+        text.alignment = alignment;
+        text.color = Color.white;
+        text.horizontalOverflow = HorizontalWrapMode.Overflow;
+        text.verticalOverflow = VerticalWrapMode.Overflow;
+        text.raycastTarget = false;
+
+        Outline outline = textObject.GetComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        return text;
     }
 
-    private string ComboText()
+    private static void StretchToParent(RectTransform rect)
     {
-        if (score.Combo != comboKey)
-        {
-            comboKey = score.Combo;
-            comboText = "Combo x" + comboKey;
-        }
-
-        return comboText;
-    }
-
-    private string PowerText()
-    {
-        float remaining = player.PowerCooldownRemaining;
-        int key = remaining > 0f ? Mathf.CeilToInt(remaining * 10f) : 0;
-        if (key != powerKey)
-        {
-            powerKey = key;
-            powerText = key > 0 ? "Poder: " + (key / 10f).ToString("0.0") + "s" : "Poder: pronto";
-        }
-
-        return powerText;
-    }
-
-    private string HealthText(Health health)
-    {
-        int key = health.Current * 1000 + health.Max;
-        if (key != healthKey)
-        {
-            healthKey = key;
-            healthText = health.Current + "/" + health.Max;
-        }
-
-        return healthText;
-    }
-
-    private void EnsureStyles()
-    {
-        if (labelStyle != null)
-        {
-            return;
-        }
-
-        labelStyle = new GUIStyle(GUI.skin.label) { fontSize = 20, fontStyle = FontStyle.Bold };
-        labelStyle.normal.textColor = Color.white;
-
-        rightStyle = new GUIStyle(labelStyle) { alignment = TextAnchor.MiddleRight };
-
-        hintStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 18,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter
-        };
-        hintStyle.normal.textColor = Color.white;
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
     }
 }

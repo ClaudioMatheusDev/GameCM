@@ -3,8 +3,6 @@ using UnityEngine;
 /// <summary>Congela o jogo por instantes ao acertar golpes. Nao interfere quando o jogo esta pausado.</summary>
 public class HitStop : MonoBehaviour
 {
-    private const float FrozenScale = 0.02f;
-
     private float endTime;
     private bool active;
 
@@ -26,15 +24,15 @@ public class HitStop : MonoBehaviour
 
     public void Freeze(float seconds)
     {
-        // So congela com o jogo rodando normalmente (nao durante pausa/menus).
-        if (!active && !Mathf.Approximately(Time.timeScale, 1f))
+        // So congela com o jogo rodando (nao durante pausa/menus).
+        if (GameClock.Paused)
         {
             return;
         }
 
         endTime = Mathf.Max(endTime, Time.unscaledTime + seconds);
         active = true;
-        Time.timeScale = FrozenScale;
+        GameClock.HitStopActive = true;
     }
 
     /// <summary>Devolve o tempo ao normal; chamado antes de pausar ou trocar de tela.</summary>
@@ -43,7 +41,7 @@ public class HitStop : MonoBehaviour
         if (active)
         {
             active = false;
-            Time.timeScale = 1f;
+            GameClock.HitStopActive = false;
         }
     }
 
@@ -54,13 +52,7 @@ public class HitStop : MonoBehaviour
             return;
         }
 
-        if (!Mathf.Approximately(Time.timeScale, FrozenScale))
-        {
-            active = false;
-            return;
-        }
-
-        if (Time.unscaledTime >= endTime)
+        if (GameClock.Paused || Time.unscaledTime >= endTime)
         {
             Cancel();
         }

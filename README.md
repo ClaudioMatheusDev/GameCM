@@ -16,13 +16,13 @@ Abra o projeto na Unity, abra `Assets/Scenes/CharacterDemoScene.unity` e aperte 
 | Pausar / voltar | Esc | Start ou botao leste (B) |
 | Reiniciar (tela de resultado) | R | Select |
 
-**Inimigos:** zumbis normais, rapidos (fase 2 em diante), resistentes (fase 3 em diante, causam 2 de dano) e, na fase 4, um **chefe** com barra de vida que faz investidas (o corpo fica vermelho antes de avancar). Zumbis mais fortes valem mais pontos.
+**Inimigos:** zumbis normais, rapidos (fase 2 em diante), resistentes (fase 3 em diante, causam 2 de dano) e, na fase 4, um **chefe** com barra de vida que faz investidas (o corpo fica vermelho antes de avancar). Zumbis mais fortes valem mais pontos. Zumbis feridos mostram uma barra de vida e piscam em amarelo um instante antes de bater (da tempo de desviar). Alguns largam um **coracao** que cura 1 de vida (o chefe sempre larga).
 
 **Objetivo:** elimine todos os zumbis da fase e va ate a borda direita da tela para avancar. Venca a fase 4 para ganhar. Voce tem 5 pontos de vida; zumbis causam dano ao encostar (pular ajuda a desviar) e voce fica invulneravel por um instante depois de ser atingido.
 
 ## Telas
 
-Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principal**, **selecao de fase** (fases liberam ao concluir a anterior), **como jogar**, **opcoes** (volume e tela cheia), **creditos**, **pausa**, **introducao de fase** e **resultado** (pontuacao, recorde, combo, estrelas e tempo). Volume, tela cheia, recorde e fases liberadas ficam salvos em `PlayerPrefs` (`GameProgress`).
+Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principal**, **selecao de fase** (fases liberam ao concluir a anterior), **como jogar**, **opcoes** (volume, tela cheia e dificuldade: facil, normal ou dificil, que vale a partir do proximo inicio/reinicio), **creditos**, **pausa**, **introducao de fase** e **resultado** (pontuacao, recorde, combo, estrelas e tempo). Volume, tela cheia, recorde e fases liberadas ficam salvos em `PlayerPrefs` (`GameProgress`).
 
 ## Pontuacao
 
@@ -51,15 +51,18 @@ Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principa
 - `Health`: vida e invulnerabilidade temporaria.
 - `GameInput`: entrada (teclado e gamepad) montada em codigo.
 - `SpriteFrameAnimator`: animacao simples por troca de sprites (usada nos zumbis).
-- `GameHud`: HUD de jogo em IMGUI (vida, fase, pontos, combo, tempo).
+- `GameHud`: HUD de jogo em uGUI criado em codigo (vida, fase, pontos, combo, tempo, barra do chefe).
 - `GameMenus` / `UiFactory`: telas em uGUI criadas em codigo.
 - `ScoreTracker` / `ScoreCalculator`: pontuacao, combo e estrelas.
 - `ZombieVariant` / `ZombieSpawnTable`: tipos de zumbi (normal, rapido, resistente, chefe) e sorteio por fase.
 - `CameraShake` / `HitStop` / `ImpactFx`: tremor de camera e pausa curta ao acertar golpes, matar zumbis, levar dano e nas investidas do chefe.
 - `SfxPlayer`: efeitos sonoros (soco, poder, pulo, dano, morte e menus) com cortes por duracao maxima.
+- `GameClock`: unico dono do `Time.timeScale` (pausa tem prioridade sobre o hit-stop).
+- `Difficulty` / `DifficultyRules`: multiplicadores de cada dificuldade (vida e dano dos zumbis, quantidade, vida do jogador, chance de cura).
+- `HealthPickup` / `WorldHealthBar`: coracao de cura e barra de vida sobre os zumbis.
 - `ControlsText`: textos de controles usados no HUD e na tela "Como jogar" (altere so aqui).
 - `GameProgress` / `GameSession`: dados salvos e estado entre recarregamentos de cena.
 
 ## Testes
 
-`Window > General > Test Runner > EditMode > Run All`. O workflow `.github/workflows/tests.yml` roda os mesmos testes no GitHub (exige os segredos `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`).
+`Window > General > Test Runner > EditMode > Run All`. Ha tambem testes de PlayMode em `Assets/Tests/PlayMode` (carregam a cena e jogam a fase 1). O workflow `.github/workflows/tests.yml` roda os mesmos testes no GitHub (exige os segredos `UNITY_LICENSE`, `UNITY_EMAIL` e `UNITY_PASSWORD`).

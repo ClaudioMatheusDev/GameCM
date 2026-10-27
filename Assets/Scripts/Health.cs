@@ -55,6 +55,19 @@ public class Health : MonoBehaviour
         return true;
     }
 
+    /// <summary>Recupera vida ate o maximo. Retorna true se algo foi curado.</summary>
+    public bool Heal(int amount)
+    {
+        EnsureInitialized();
+        if (amount <= 0 || IsDead || current >= maxHealth)
+        {
+            return false;
+        }
+
+        current = Mathf.Min(maxHealth, current + amount);
+        return true;
+    }
+
     public void Tick(float deltaTime)
     {
         if (invulnerabilityTimer > 0f)

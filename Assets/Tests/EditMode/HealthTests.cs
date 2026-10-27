@@ -21,6 +21,26 @@ public class HealthTests
     }
 
     [Test]
+    public void HealRestoresUpToMaxOnly()
+    {
+        health.TakeDamage(2);
+        Assert.IsTrue(health.Heal(1));
+        Assert.AreEqual(2, health.Current);
+        Assert.IsTrue(health.Heal(5));
+        Assert.AreEqual(3, health.Current);
+        Assert.IsFalse(health.Heal(1));
+    }
+
+    [Test]
+    public void HealDoesNotReviveTheDead()
+    {
+        health.Initialize(1, 0f);
+        health.TakeDamage(1);
+        Assert.IsFalse(health.Heal(1));
+        Assert.IsTrue(health.IsDead);
+    }
+
+    [Test]
     public void StartsWithFullHealth()
     {
         Assert.AreEqual(3, health.Current);

@@ -6,8 +6,12 @@ on:
   pull_request:
 
 jobs:
-  editmode:
+  tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        testMode: [editmode, playmode]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,4 +29,4 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           unityVersion: 6000.4.8f1
-          testMode: editmode
+          testMode: ${{ matrix.testMode }}

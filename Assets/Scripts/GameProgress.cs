@@ -12,6 +12,7 @@ public static class GameProgress
     private static string UnlockedStageKey => KeyPrefix + "UnlockedStage";
     private static string VolumeKey => KeyPrefix + "Volume";
     private static string FullscreenKey => KeyPrefix + "Fullscreen";
+    private static string DifficultyKey => KeyPrefix + "Difficulty";
 
     public static int HighScore
     {
@@ -26,6 +27,12 @@ public static class GameProgress
     {
         get => Mathf.Clamp01(PlayerPrefs.GetFloat(VolumeKey, 1f));
         set => PlayerPrefs.SetFloat(VolumeKey, Mathf.Clamp01(value));
+    }
+
+    public static Difficulty Difficulty
+    {
+        get => (Difficulty)Mathf.Clamp(PlayerPrefs.GetInt(DifficultyKey, (int)Difficulty.Normal), 0, 2);
+        set => PlayerPrefs.SetInt(DifficultyKey, Mathf.Clamp((int)value, 0, 2));
     }
 
     public static bool HasFullscreenPreference => PlayerPrefs.HasKey(FullscreenKey);
@@ -67,5 +74,6 @@ public static class GameProgress
         PlayerPrefs.DeleteKey(UnlockedStageKey);
         PlayerPrefs.DeleteKey(VolumeKey);
         PlayerPrefs.DeleteKey(FullscreenKey);
+        PlayerPrefs.DeleteKey(DifficultyKey);
     }
 }
