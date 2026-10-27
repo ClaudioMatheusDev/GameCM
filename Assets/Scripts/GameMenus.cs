@@ -151,6 +151,7 @@ public class GameMenus : MonoBehaviour
 
         if (paused)
         {
+            SfxPlayer.UiMutedUntilFrame = Time.frameCount + 1;
             HideIntro();
             RefreshDynamicTexts();
             SelectFirst(screen);

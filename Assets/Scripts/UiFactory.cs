@@ -131,7 +131,9 @@ public static class UiFactory
         colors.disabledColor = new Color(0.12f, 0.12f, 0.15f, 0.8f);
         colors.colorMultiplier = 1f;
         button.colors = colors;
+        button.onClick.AddListener(() => SfxPlayer.Play(Sfx.UiClick));
         button.onClick.AddListener(onClick);
+        buttonObject.AddComponent<UiSelectSound>();
 
         LayoutElement layout = buttonObject.GetComponent<LayoutElement>();
         layout.preferredWidth = width;
@@ -179,5 +181,24 @@ public static class UiFactory
     public static void SetButtonText(Button button, string text)
     {
         button.GetComponentInChildren<Text>().text = text;
+    }
+}
+
+/// <summary>Toca o som de selecao ao navegar por teclado/gamepad ou passar o mouse sobre um botao.</summary>
+public class UiSelectSound : MonoBehaviour, ISelectHandler, IPointerEnterHandler
+{
+    public void OnSelect(BaseEventData eventData)
+    {
+        if (eventData is PointerEventData)
+        {
+            return;
+        }
+
+        SfxPlayer.Play(Sfx.UiSelect);
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        SfxPlayer.Play(Sfx.UiSelect);
     }
 }
