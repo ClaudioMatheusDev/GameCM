@@ -56,4 +56,41 @@ public class GameProgressTests
         GameProgress.Volume = -1f;
         Assert.AreEqual(0f, GameProgress.Volume);
     }
+
+    [Test]
+    public void StageStarsOnlyImprove()
+    {
+        GameProgress.SubmitStageStars(1, 2);
+        GameProgress.SubmitStageStars(1, 1);
+        GameProgress.SubmitStageStars(2, 9);
+
+        Assert.AreEqual(2, GameProgress.GetStageStars(1));
+        Assert.AreEqual(ScoreCalculator.MaxStars, GameProgress.GetStageStars(2));
+        Assert.AreEqual(0, GameProgress.GetStageStars(0));
+    }
+
+    [Test]
+    public void RegisterScoreBuildsRankingAndHighScore()
+    {
+        Assert.AreEqual(1, GameProgress.RegisterScore(500));
+        Assert.AreEqual(1, GameProgress.RegisterScore(900));
+        Assert.AreEqual(2, GameProgress.RegisterScore(600));
+        Assert.AreEqual(0, GameProgress.RegisterScore(0));
+
+        CollectionAssert.AreEqual(new[] { 900, 600, 500 }, GameProgress.TopScores);
+        Assert.AreEqual(900, GameProgress.HighScore);
+    }
+
+    [Test]
+    public void OptionsDefaultToNormalWithEffectsOn()
+    {
+        Assert.IsTrue(GameProgress.ScreenEffects);
+        Assert.AreEqual(Difficulty.Normal, GameProgress.Difficulty);
+
+        GameProgress.ScreenEffects = false;
+        GameProgress.Difficulty = Difficulty.Hard;
+
+        Assert.IsFalse(GameProgress.ScreenEffects);
+        Assert.AreEqual(Difficulty.Hard, GameProgress.Difficulty);
+    }
 }

@@ -4,7 +4,7 @@ Beat'em up 2D lateral feito na Unity 6 (6000.4.8f1) com URP e Input System. O pe
 
 ## Como jogar
 
-Abra o projeto na Unity, abra `Assets/Scenes/CharacterDemoScene.unity` e aperte Play.
+Abra o projeto na Unity, abra `Assets/Scenes/GameScene.unity` e aperte Play.
 
 | Acao | Teclado | Gamepad |
 |---|---|---|
@@ -17,6 +17,10 @@ Abra o projeto na Unity, abra `Assets/Scenes/CharacterDemoScene.unity` e aperte 
 | Reiniciar (tela de resultado) | R | Select |
 
 **Inimigos:** zumbis normais, rapidos (fase 2 em diante), resistentes (fase 3 em diante, causam 2 de dano) e, na fase 4, um **chefe** com barra de vida que faz investidas (o corpo fica vermelho antes de avancar). Zumbis mais fortes valem mais pontos.
+
+**Combate:** aperte J de novo logo apos o impacto do soco para encadear um combo de 3 socos; o terceiro e um finalizador (mais dano, alcance e empurrao). Todo zumbi fica amarelo por um instante antes de atacar, dando tempo de pular ou golpear primeiro.
+
+**Dificuldade (Opcoes):** Facil (mais vida, zumbis mais lentos e em menor numero), Normal e Dificil (menos vida, zumbis mais rapidos e numerosos). Vale a partir da proxima partida e altera a pontuacao.
 
 **Itens de cura:** zumbis podem soltar um coracao (mais chance nos resistentes e quando voce esta com pouca vida). Encoste para recuperar vida; com a vida cheia o item espera no chao e some depois de alguns segundos.
 
@@ -37,16 +41,16 @@ Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principa
 | Caminho | Conteudo |
 |---|---|
 | `Assets/Scripts` | Codigo de jogo (assembly `GameCM.Runtime`) |
-| `Assets/Editor/BuildCharacterDemoAssets.cs` | Menu `Tools > Character Demo > Build All Deliverables`: importa sprites, gera spritesheet, clips, Animator e a cena |
+| `Assets/Editor/BuildGameAssets.cs` | Menu `Tools > GameCM > Build Sprites, Animations and Scene`: importa sprites, gera spritesheet, clips, Animator e a cena |
 | `Assets/Tests/EditMode` | Testes de edicao (Test Runner da Unity) |
 | `Assets/Sprites` | Frames do personagem por animacao |
 | `Assets/Zombie` | Frames do zumbi (`walk_left`, `hurt/up`, `Death`) |
 | `Assets/Backgrounds` | Fundos `Stage1` a `Stage4` |
-| `Assets/CharacterDemo/Audio` | Musica (`AudioBackground.mp3`) e efeitos em `Sons/` |
+| `Assets/Game/Audio` | Musica (`AudioBackground.mp3`) e efeitos em `Sons/` |
 
 ### Scripts
 
-- `CharacterDemoController`: raiz da cena. Guarda as referencias (fundos, sprites, audio) e as configuracoes serializadas, e liga os demais componentes.
+- `GameBootstrap`: raiz da cena. Guarda as referencias (fundos, sprites, audio) e as configuracoes serializadas, e liga os demais componentes.
 - `PlayerController`: movimento, pulo, corrida, ataques (soco/poder com hitbox via `Physics2D`), dano recebido e morte.
 - `ZombieController` / `ZombieSettings`: perseguicao, dano por contato, reacao a golpes, morte e fade.
 - `StageManager`: fases, fundos, geracao de zumbis com object pool e estado da partida (jogando, vitoria, derrota).
@@ -56,6 +60,8 @@ Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principa
 - `GameHud`: HUD de jogo em IMGUI (vida, fase, pontos, combo, tempo).
 - `GameMenus` / `UiFactory`: telas em uGUI criadas em codigo.
 - `ScoreTracker` / `ScoreCalculator`: pontuacao, combo e estrelas.
+- `DifficultyProfile`: ajustes de dificuldade (vida do jogador, velocidade e quantidade de zumbis, pontuacao).
+- `ScoreBoard`: ranking local (top 5) em logica pura; `ScreenFader`: fade entre fases.
 - `ZombieVariant` / `ZombieSpawnTable`: tipos de zumbi (normal, rapido, resistente, chefe) e sorteio por fase.
 - `CameraShake` / `HitStop` / `ImpactFx`: tremor de camera e pausa curta ao acertar golpes, matar zumbis, levar dano e nas investidas do chefe.
 - `HealthPickup` / `PixelSprites`: item de cura (sprite gerado em codigo).

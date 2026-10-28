@@ -26,6 +26,11 @@ public class PlayerTuning
     public float invulnerabilityDuration = 1.2f;
     public float hurtDuration = 0.4f;
     public float hurtKnockback = 6f;
+    public float comboPunchDuration = 0.42f;
+    public float comboWindow = 0.5f;
+    public int finisherDamageBonus = 1;
+    public float finisherKnockbackMultiplier = 1.8f;
+    public float finisherRangeMultiplier = 1.2f;
 }
 
 [RequireComponent(typeof(Animator), typeof(SpriteRenderer), typeof(Health))]
@@ -55,6 +60,9 @@ public class PlayerController : MonoBehaviour
     private float facing = 1f;
     private float dustTimer;
     private bool wasJumping;
+    private int comboStep;
+    private float comboTimer;
+    private bool punchQueued;
     private readonly List<Collider2D> hitBuffer = new List<Collider2D>(16);
     private ContactFilter2D hitFilter;
 
@@ -95,6 +103,9 @@ public class PlayerController : MonoBehaviour
         }
 
         attackTimer = 0f;
+        comboStep = 0;
+        comboTimer = 0f;
+        punchQueued = false;
         if (!IsDead)
         {
             SfxPlayer.Play(Sfx.PlayerHurt);
@@ -135,6 +146,7 @@ public class PlayerController : MonoBehaviour
 
         float deltaTime = Time.deltaTime;
         Vector3 position = transform.position;
+        float previousX = position.x;
 
         if (IsDead)
         {
@@ -147,6 +159,11 @@ public class PlayerController : MonoBehaviour
 
         powerCooldownTimer = Mathf.Max(0f, powerCooldownTimer - deltaTime);
         hurtTimer = Mathf.Max(0f, hurtTimer - deltaTime);
+        if (attackTimer <= 0f)
+        {
+            comboTimer = Mathf.Max(0f, comboTimer - deltaTime);
+        }
+
         bool isHurt = hurtTimer > 0f;
         bool canAct = !InputLocked && !isHurt;
 
@@ -180,7 +197,7 @@ public class PlayerController : MonoBehaviour
         position.x = Mathf.Clamp(position.x, settings.stageStartX, settings.stageEndX);
         bool isJumping = UpdateJump(ref position, deltaTime);
         transform.position = position;
-        UpdateDust(deltaTime, isJumping, isHurt, direction, sprinting);
+        UpdateDust(deltaTime, isJumping, isHurt, Mathf.Abs(position.x - previousX) > 0.0001f, sprinting);
 
         if (direction != 0f && !attacking)
         {
@@ -208,21 +225,30 @@ public class PlayerController : MonoBehaviour
 
         if (attackTimer > 0f)
         {
+            // Apertar de novo depois do impacto do soco encadeia o proximo golpe do combo.
+            if (!attackIsPower && attackHitDone && input.PunchPressed)
+            {
+                punchQueued = true;
+            }
+
             return;
         }
 
         if (input.PowerPressed && powerCooldownTimer <= 0f)
         {
+            comboStep = 0;
+            comboTimer = 0f;
+            punchQueued = false;
             StartAttack("Power", settings.powerDuration, true);
             powerCooldownTimer = settings.powerCooldown;
         }
-        else if (input.PunchPressed)
+        else if (input.PunchPressed || punchQueued)
         {
-            StartAttack("Punch", settings.punchDuration, false);
+            StartPunch();
         }
     }
 
-    private void UpdateDust(float deltaTime, bool isJumping, bool isHurt, float direction, bool sprinting)
+    private void UpdateDust(float deltaTime, bool isJumping, bool isHurt, bool moved, bool sprinting)
     {
         if (wasJumping && !isJumping)
         {
@@ -230,7 +256,7 @@ public class PlayerController : MonoBehaviour
         }
 
         wasJumping = isJumping;
-        if (isJumping || isHurt || direction == 0f)
+        if (isJumping || isHurt || !moved)
         {
             dustTimer = 0f;
             return;
@@ -283,6 +309,21 @@ public class PlayerController : MonoBehaviour
         return sprinting ? "Run" : "Walk";
     }
 
+    /// <summary>Combo de tres socos; o terceiro e o finalizador (mais dano, alcance e empurrao).</summary>
+    private void StartPunch()
+    {
+        punchQueued = false;
+        comboStep = comboTimer > 0f ? comboStep % 3 + 1 : 1;
+        float duration = comboStep == 1 ? settings.punchDuration : settings.comboPunchDuration;
+        StartAttack("Punch", duration, false);
+
+        // Reinicia a animacao do soco, que ja estava tocando no golpe anterior.
+        if (comboStep > 1)
+        {
+            animator.Play("Punch", 0, 0f);
+        }
+    }
+
     private void StartAttack(string stateName, float duration, bool isPower)
     {
         activeAttackState = stateName;
@@ -303,19 +344,30 @@ public class PlayerController : MonoBehaviour
         }
 
         attackTimer = Mathf.Max(0f, attackTimer - deltaTime);
+        if (attackTimer <= 0f && !attackIsPower)
+        {
+            comboTimer = settings.comboWindow;
+        }
     }
 
     private void PerformAttackHit()
     {
-        float range = attackIsPower ? settings.powerRange : settings.punchRange;
-        int damage = attackIsPower ? settings.powerDamage : settings.punchDamage;
-        float knockback = attackIsPower ? settings.powerKnockback : settings.punchKnockback;
+        bool finisher = !attackIsPower && comboStep == 3;
+        float range = attackIsPower
+            ? settings.powerRange
+            : settings.punchRange * (finisher ? settings.finisherRangeMultiplier : 1f);
+        int damage = attackIsPower
+            ? settings.powerDamage
+            : settings.punchDamage + (finisher ? settings.finisherDamageBonus : 0);
+        float knockback = attackIsPower
+            ? settings.powerKnockback
+            : settings.punchKnockback * (finisher ? settings.finisherKnockbackMultiplier : 1f);
 
         Bounds body = spriteRenderer.bounds;
         Vector2 center = new Vector2(transform.position.x + facing * range * 0.5f, body.center.y);
         Vector2 size = new Vector2(range, Mathf.Max(body.size.y, 1.5f));
 
-        if (attackIsPower)
+        if (attackIsPower || finisher)
         {
             ParticleFx.PowerBurst(center);
         }
@@ -341,7 +393,7 @@ public class PlayerController : MonoBehaviour
         }
         else if (anyHit)
         {
-            ImpactFx.Play(attackIsPower ? Fx.PowerHit : Fx.PunchHit);
+            ImpactFx.Play(attackIsPower || finisher ? Fx.PowerHit : Fx.PunchHit);
         }
     }
 
