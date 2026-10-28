@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -31,6 +32,8 @@ public class StageManager : MonoBehaviour
 {
     private const float EdgeTolerance = 0.05f;
     private const int LowHealthThreshold = 2;
+    private const float FadeSeconds = 0.3f;
+    private const int MaxZombieSortingOffset = 24;
 
     private SpriteRenderer background;
     private Sprite[] backgrounds;
@@ -50,6 +53,8 @@ public class StageManager : MonoBehaviour
     private int zombiesKilled;
     private float spawnTimer;
     private bool bossPending;
+    private bool transitioning;
+    private int zombiesCreated;
     private readonly List<HealthPickup> pickups = new List<HealthPickup>();
 
     private readonly List<ZombieController> active = new List<ZombieController>();
@@ -59,7 +64,9 @@ public class StageManager : MonoBehaviour
     public event Action<int> StageBegan;
     public event Action<int> StageCompleted;
     public event Action<ZombieController> ZombieKilled;
+    public event Action BossAppeared;
 
+    public ScreenFader Fader { get; set; }
     public GameState State { get; private set; } = GameState.Playing;
     public int StageIndex { get; private set; }
     public int StageCount => backgrounds != null ? backgrounds.Length : 0;
@@ -97,6 +104,8 @@ public class StageManager : MonoBehaviour
             ? playerRenderer.bounds.size.y * settings.zombieHeightRatio / frames.Walk[0].bounds.size.y
             : 1f;
 
+        DifficultyProfile.Refresh();
+        ImpactFx.ScreenEffectsEnabled = GameProgress.ScreenEffects;
         player.Died += OnPlayerDied;
         StageIndex = Mathf.Clamp(startStageIndex, 0, backgrounds.Length - 1);
         SetBackground(backgrounds[StageIndex]);
@@ -122,17 +131,39 @@ public class StageManager : MonoBehaviour
         UpdateSpawning(Time.deltaTime);
 
         bool atExit = player.transform.position.x >= endX - EdgeTolerance;
-        if (StageCleared && atExit)
+        if (StageCleared && atExit && !transitioning)
         {
             if (StageIndex < StageCount - 1)
             {
-                AdvanceStage();
+                StartCoroutine(AdvanceRoutine());
             }
             else
             {
                 SetState(GameState.Victory);
                 player.InputLocked = true;
             }
+        }
+    }
+
+    private IEnumerator AdvanceRoutine()
+    {
+        transitioning = true;
+        player.InputLocked = true;
+        if (Fader != null)
+        {
+            yield return Fader.FadeTo(1f, FadeSeconds);
+        }
+
+        AdvanceStage();
+        if (Fader != null)
+        {
+            yield return Fader.FadeTo(0f, FadeSeconds);
+        }
+
+        transitioning = false;
+        if (State == GameState.Playing && Time.timeScale > 0f)
+        {
+            player.InputLocked = false;
         }
     }
 
@@ -148,7 +179,7 @@ public class StageManager : MonoBehaviour
 
     private void BeginStage()
     {
-        int baseCount = UnityEngine.Random.Range(settings.minZombies, settings.maxZombies + 1);
+        int baseCount = DifficultyProfile.Current.ScaleCount(UnityEngine.Random.Range(settings.minZombies, settings.maxZombies + 1));
         zombieTarget = frames.Walk != null && frames.Walk.Length > 0
             ? baseCount + StageIndex * settings.extraZombiesPerStage
             : 0;
@@ -197,6 +228,7 @@ public class StageManager : MonoBehaviour
             ActiveBoss = zombie;
             SfxPlayer.Play(Sfx.BossRoar);
             ImpactFx.Play(Fx.BossCharge);
+            BossAppeared?.Invoke();
         }
     }
 
@@ -206,7 +238,9 @@ public class StageManager : MonoBehaviour
         GameObject zombieObject = new GameObject("Zombie");
         SpriteRenderer zombieRenderer = zombieObject.AddComponent<SpriteRenderer>();
         zombieRenderer.sortingLayerID = playerRenderer.sortingLayerID;
-        zombieRenderer.sortingOrder = playerRenderer.sortingOrder + 1;
+        // Ordens distintas evitam que zumbis sobrepostos pisquem um sobre o outro.
+        zombieRenderer.sortingOrder = playerRenderer.sortingOrder + 1 + Mathf.Min(zombiesCreated, MaxZombieSortingOffset);
+        zombiesCreated++;
 
         ZombieController zombie = zombieObject.AddComponent<ZombieController>();
         zombie.Died += OnZombieDied;

@@ -4,7 +4,7 @@ using UnityEngine;
 /// Raiz da cena: guarda as referencias montadas pelo editor (fundos, sprites do zumbi, audio e efeitos)
 /// e liga os componentes de jogo: PlayerController, StageManager, ScoreTracker, GameHud e GameMenus.
 /// </summary>
-public class CharacterDemoController : MonoBehaviour
+public class GameBootstrap : MonoBehaviour
 {
     [SerializeField] private Animator animator = null;
     [SerializeField] private AudioSource themeSource = null;
@@ -46,6 +46,9 @@ public class CharacterDemoController : MonoBehaviour
             stageCamera.gameObject.AddComponent<CameraShake>();
         }
 
+        DifficultyProfile.Refresh();
+        playerSettings.maxHealth = Mathf.Max(1, playerSettings.maxHealth + DifficultyProfile.Current.PlayerHealthDelta);
+
         player = GetOrAdd<PlayerController>();
         player.Configure(playerSettings, stateNames);
 
@@ -57,6 +60,7 @@ public class CharacterDemoController : MonoBehaviour
         };
 
         stage = GetOrAdd<StageManager>();
+        stage.Fader = GetOrAdd<ScreenFader>();
         stage.Configure(
             stageBackground,
             stageBackgrounds,
@@ -91,7 +95,7 @@ public class CharacterDemoController : MonoBehaviour
 
         if (stageBackground == null || stageBackgrounds == null || stageBackgrounds.Length == 0)
         {
-            Debug.LogError("Character Demo precisa de um SpriteRenderer de fundo e de ao menos um sprite de fase.", this);
+            Debug.LogError("GameCM precisa de um SpriteRenderer de fundo e de ao menos um sprite de fase.", this);
             return false;
         }
 
@@ -106,7 +110,7 @@ public class CharacterDemoController : MonoBehaviour
 
         if (stageCamera == null || !stageCamera.orthographic)
         {
-            Debug.LogError("Character Demo precisa de uma camera principal ortografica para ajustar os fundos.", this);
+            Debug.LogError("GameCM precisa de uma camera principal ortografica para ajustar os fundos.", this);
             return false;
         }
 

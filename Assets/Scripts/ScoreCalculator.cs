@@ -8,6 +8,7 @@ public static class ScoreCalculator
     public const int MaxComboSteps = 8;
     public const int HealthBonusPerPoint = 200;
     public const int TimeBonusPerSecond = 10;
+    public const int MaxStars = 3;
 
     /// <summary>Pontos por zumbi morto; combo 1 e o primeiro abate sem levar dano.</summary>
     public static int KillPoints(int combo)

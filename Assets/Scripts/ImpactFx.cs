@@ -11,6 +11,9 @@ public enum Fx
 /// <summary>Ponto unico para os efeitos de impacto (tremor de camera e hit-stop).</summary>
 public static class ImpactFx
 {
+    /// <summary>Lido de PlayerPrefs uma vez por partida e atualizado pelas opcoes.</summary>
+    public static bool ScreenEffectsEnabled { get; set; } = true;
+
     public static void Play(Fx fx)
     {
         switch (fx)
@@ -38,6 +41,11 @@ public static class ImpactFx
 
     private static void Apply(float shakeMagnitude, float shakeSeconds, float freezeSeconds)
     {
+        if (!ScreenEffectsEnabled)
+        {
+            return;
+        }
+
         if (CameraShake.Instance != null)
         {
             CameraShake.Instance.Shake(shakeMagnitude, shakeSeconds);

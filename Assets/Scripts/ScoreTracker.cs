@@ -18,6 +18,7 @@ public class ScoreTracker : MonoBehaviour
     public int TotalStars { get; private set; }
     public float Elapsed { get; private set; }
     public bool NewRecord { get; private set; }
+    public int Rank { get; private set; }
     public int HighScore { get; private set; }
 
     public void Configure(StageManager stageManager, PlayerController playerController)
@@ -68,7 +69,7 @@ public class ScoreTracker : MonoBehaviour
         Kills++;
         Combo++;
         BestCombo = Mathf.Max(BestCombo, Combo);
-        Score += ScoreCalculator.KillPoints(Combo, zombie.Variant.ScoreMultiplier);
+        Score += DifficultyProfile.Current.ScaleScore(ScoreCalculator.KillPoints(Combo, zombie.Variant.ScoreMultiplier));
     }
 
     private void OnPlayerDamaged(int amount)
@@ -86,8 +87,10 @@ public class ScoreTracker : MonoBehaviour
     private void OnStageCompleted(int stageIndex)
     {
         float par = ScoreCalculator.ParTime(stage.ZombiesTotal) + (stage.IsBossStage ? BossParBonusSeconds : 0f);
-        Score += ScoreCalculator.TimeBonus(stageTimer, par);
-        TotalStars += ScoreCalculator.Stars(stageDamage, stageTimer, par);
+        int stars = ScoreCalculator.Stars(stageDamage, stageTimer, par);
+        Score += DifficultyProfile.Current.ScaleScore(ScoreCalculator.TimeBonus(stageTimer, par));
+        TotalStars += stars;
+        GameProgress.SubmitStageStars(stageIndex, stars);
         GameProgress.UnlockStage(stageIndex + 1);
         GameProgress.Save();
     }
@@ -102,10 +105,11 @@ public class ScoreTracker : MonoBehaviour
         finalized = true;
         if (state == GameState.Victory)
         {
-            Score += ScoreCalculator.HealthBonus(player.Health.Current);
+            Score += DifficultyProfile.Current.ScaleScore(ScoreCalculator.HealthBonus(player.Health.Current));
         }
 
-        NewRecord = GameProgress.SubmitScore(Score);
+        Rank = GameProgress.RegisterScore(Score);
+        NewRecord = Rank == 1;
         HighScore = GameProgress.HighScore;
         GameProgress.Save();
     }

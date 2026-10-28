@@ -8,10 +8,10 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public static class BuildCharacterDemoAssets
+public static class BuildGameAssets
 {
     private const string SpriteRoot = "Assets/Sprites";
-    private const string GeneratedRoot = "Assets/CharacterDemo";
+    private const string GeneratedRoot = "Assets/Game";
     private const string AnimationRoot = GeneratedRoot + "/Animations";
     private const string AudioRoot = GeneratedRoot + "/Audio";
     private const string ThemeAudioPath = AudioRoot + "/AudioBackground.mp3";
@@ -22,7 +22,7 @@ public static class BuildCharacterDemoAssets
     private const string ZombieWalkRoot = ZombieRoot + "/walk_left";
     private const string ZombieHurtRoot = ZombieRoot + "/hurt/up";
     private const string ZombieDeathRoot = ZombieRoot + "/Death";
-    private const string ScenePath = SceneRoot + "/CharacterDemoScene.unity";
+    private const string ScenePath = SceneRoot + "/GameScene.unity";
     private const float PixelsPerUnit = 128f;
     private const float BackgroundPixelsPerUnit = 50f;
     private const float ZombiePixelsPerUnit = 100f;
@@ -47,8 +47,8 @@ public static class BuildCharacterDemoAssets
         new("Dead", "Dead", 6, 7f, false),
     };
 
-    [MenuItem("Tools/Character Demo/Build All Deliverables")]
-    public static void BuildAllDeliverables()
+    [MenuItem("Tools/GameCM/Build Sprites, Animations and Scene")]
+    public static void BuildAll()
     {
         Directory.CreateDirectory(GeneratedRoot);
         Directory.CreateDirectory(AnimationRoot);
@@ -67,7 +67,7 @@ public static class BuildCharacterDemoAssets
         Sprite[] zombieWalk = LoadZombieFrames(ZombieWalkRoot);
         Sprite[] zombieHurt = LoadZombieFrames(ZombieHurtRoot);
         Sprite[] zombieDeath = LoadZombieFrames(ZombieDeathRoot);
-        CreateDemoScene(controller, theme, backgrounds, zombieWalk, zombieHurt, zombieDeath, LoadSoundBank());
+        CreateGameScene(controller, theme, backgrounds, zombieWalk, zombieHurt, zombieDeath, LoadSoundBank());
         RegisterSceneInBuildSettings();
 
         AssetDatabase.SaveAssets();
@@ -76,8 +76,8 @@ public static class BuildCharacterDemoAssets
         if (!Application.isBatchMode)
         {
             EditorUtility.DisplayDialog(
-                "Character Demo",
-                "Entregáveis criados em Assets/CharacterDemo e cena demonstrativa em Assets/Scenes/CharacterDemoScene.unity.",
+                "GameCM",
+                "Arquivos gerados em Assets/Game e cena demonstrativa em Assets/Scenes/GameScene.unity.",
                 "OK");
         }
     }
@@ -384,7 +384,7 @@ public static class BuildCharacterDemoAssets
         return theme;
     }
 
-    private static void CreateDemoScene(
+    private static void CreateGameScene(
         AnimatorController controller,
         AudioClip theme,
         Sprite[] backgrounds,
@@ -394,7 +394,7 @@ public static class BuildCharacterDemoAssets
         AudioClip[] sounds)
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-        scene.name = "CharacterDemoScene";
+        scene.name = "GameScene";
 
         Camera camera = new GameObject("Main Camera").AddComponent<Camera>();
         camera.tag = "MainCamera";
@@ -412,7 +412,7 @@ public static class BuildCharacterDemoAssets
         backgroundObject.transform.localScale = Vector3.one * backgroundScale;
         backgroundObject.transform.position = new Vector3(0f, 0f, 1f);
 
-        GameObject character = new GameObject("Character Demo");
+        GameObject character = new GameObject("Player");
         character.transform.position = new Vector3(-10.5f, -2f, 0f);
 
         SpriteRenderer renderer = character.AddComponent<SpriteRenderer>();
@@ -428,7 +428,7 @@ public static class BuildCharacterDemoAssets
         audio.playOnAwake = true;
         audio.volume = 0.45f;
 
-        CharacterDemoController demo = character.AddComponent<CharacterDemoController>();
+        GameBootstrap demo = character.AddComponent<GameBootstrap>();
         SerializedObject serializedDemo = new SerializedObject(demo);
         serializedDemo.FindProperty("animator").objectReferenceValue = animator;
         serializedDemo.FindProperty("themeSource").objectReferenceValue = audio;

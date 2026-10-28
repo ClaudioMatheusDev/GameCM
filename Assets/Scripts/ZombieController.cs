@@ -11,6 +11,7 @@ public class ZombieSettings
     public float attackRange = 1.2f;
     public float attackHeight = 0.9f;
     public float attackCooldown = 1.2f;
+    public float attackWindup = 0.3f;
     public float walkFps = 8f;
     public float hurtDuration = 0.35f;
     public float deathFps = 3f;
@@ -59,6 +60,7 @@ public class ZombieController : MonoBehaviour
     private float chargeDirection;
     private float knockbackVelocity;
     private float chargeDustTimer;
+    private float attackWindupTimer;
     private float minX;
     private float maxX;
 
@@ -73,7 +75,8 @@ public class ZombieController : MonoBehaviour
 
     private float StopDistance => settings.stopDistance * variant.ScaleMultiplier;
     private float AttackRange => settings.attackRange * variant.ScaleMultiplier;
-    private float MoveSpeed => settings.moveSpeed * variant.SpeedMultiplier;
+    private float MoveSpeed => settings.moveSpeed * variant.SpeedMultiplier * DifficultyProfile.Current.ZombieSpeed;
+    private bool IsWindingUp => attackWindupTimer > 0f;
 
     private void Awake()
     {
@@ -194,15 +197,15 @@ public class ZombieController : MonoBehaviour
             return;
         }
 
-        if (Mathf.Abs(dx) > StopDistance)
+        if (!IsWindingUp && Mathf.Abs(dx) > StopDistance)
         {
             position.x = Mathf.MoveTowards(position.x, player.transform.position.x, MoveSpeed * deltaTime);
             transform.position = position;
         }
 
-        TryContactAttack(deltaTime);
+        TryContactAttack(deltaTime, false);
 
-        if (variant.Charges)
+        if (variant.Charges && !IsWindingUp)
         {
             chargeTimer -= deltaTime;
             float distance = Mathf.Abs(dx);
@@ -241,7 +244,7 @@ public class ZombieController : MonoBehaviour
 
         if (!player.IsDead)
         {
-            TryContactAttack(deltaTime);
+            TryContactAttack(deltaTime, true);
         }
 
         if (stateTimer <= 0f)
@@ -252,7 +255,7 @@ public class ZombieController : MonoBehaviour
         }
     }
 
-    private void TryContactAttack(float deltaTime)
+    private void TryContactAttack(float deltaTime, bool instant)
     {
         attackTimer -= deltaTime;
         Vector3 position = transform.position;
@@ -261,9 +264,40 @@ public class ZombieController : MonoBehaviour
         bool inRange = Mathf.Abs(dx) <= AttackRange && Mathf.Abs(dy) <= settings.attackHeight;
         int damage = Mathf.Max(1, Mathf.RoundToInt(settings.contactDamage * variant.DamageMultiplier));
 
-        if (attackTimer <= 0f && inRange && player.ReceiveHit(damage, position.x))
+        // Na investida do chefe o dano e imediato; nos demais ha um aviso (corpo amarelo) antes do golpe.
+        if (instant)
         {
+            if (attackTimer <= 0f && inRange && player.ReceiveHit(damage, position.x))
+            {
+                attackTimer = settings.attackCooldown;
+            }
+
+            return;
+        }
+
+        if (IsWindingUp)
+        {
+            attackWindupTimer -= deltaTime;
+            if (attackWindupTimer > 0f)
+            {
+                spriteRenderer.color = Color.Lerp(variant.Tint, Color.yellow, Mathf.PingPong(Time.time * 12f, 1f));
+                return;
+            }
+
+            attackWindupTimer = 0f;
+            spriteRenderer.color = variant.Tint;
+            if (inRange)
+            {
+                player.ReceiveHit(damage, position.x);
+            }
+
             attackTimer = settings.attackCooldown;
+            return;
+        }
+
+        if (attackTimer <= 0f && inRange)
+        {
+            attackWindupTimer = Mathf.Max(0.05f, settings.attackWindup);
         }
     }
 
@@ -298,6 +332,7 @@ public class ZombieController : MonoBehaviour
     private void EnterWalking()
     {
         state = State.Walking;
+        attackWindupTimer = 0f;
         spriteRenderer.color = variant.Tint;
         frameAnimator.Play(frames.Walk, settings.walkFps, true);
     }

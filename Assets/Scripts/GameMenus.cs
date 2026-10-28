@@ -13,6 +13,7 @@ public enum MenuScreen
     HowToPlay,
     Options,
     Credits,
+    Ranking,
     Pause,
     Result
 }
@@ -23,7 +24,7 @@ public class GameMenus : MonoBehaviour
     private const string GameTitle = "GAMECM";
     private const string Credits =
         "Projeto GameCM\n\n"
-        + "Programacao e design: Claudio Matheus\n"
+        + "Programação e design: Claudio Matheus\n"
         + "Arte: pixel art (frames do Pixilart)\n"
         + "Trilha sonora: criada no BeepBox\n"
         + "Motor: Unity 6";
@@ -31,11 +32,13 @@ public class GameMenus : MonoBehaviour
     private const string HowToPlayText =
         "A / D ou setas: mover\n"
         + "Shift: correr\n"
-        + "Espaco: pular (ajuda a desviar dos zumbis)\n"
-        + "J: soco     K: poder (recarga de 2 s)\n"
+        + "Espaço: pular (ajuda a desviar dos zumbis)\n"
+        + "J: soco. Aperte J de novo logo após o impacto para fazer um combo de 3 socos\n"
+        + "K: poder (recarga de 2 s)\n"
         + "Esc ou Start: pausar\n\n"
-        + "Elimine todos os zumbis e va ate a borda direita para avancar.\n"
-        + "Gamepad: analogico, A pula, X soco, Y poder, gatilho direito corre.";
+        + "Zumbis ficam amarelos um instante antes de atacar: pule ou golpeie primeiro.\n"
+        + "Elimine todos os zumbis e vá até a borda direita para avançar.\n"
+        + "Gamepad: analógico, A pula, X soco, Y poder, gatilho direito corre.";
 
     private const float IntroSeconds = 2f;
     private const float VolumeStep = 0.1f;
@@ -53,6 +56,9 @@ public class GameMenus : MonoBehaviour
 
     private Text volumeLabel;
     private Button fullscreenButton;
+    private Button effectsButton;
+    private Button difficultyButton;
+    private Text rankingBody;
     private Text resultTitle;
     private Text resultBody;
     private GameObject introRoot;
@@ -75,6 +81,7 @@ public class GameMenus : MonoBehaviour
 
         stage.StateChanged += OnStateChanged;
         stage.StageBegan += OnStageBegan;
+        stage.BossAppeared += OnBossAppeared;
 
         if (GameSession.SkipMenu)
         {
@@ -94,6 +101,7 @@ public class GameMenus : MonoBehaviour
         {
             stage.StateChanged -= OnStateChanged;
             stage.StageBegan -= OnStageBegan;
+            stage.BossAppeared -= OnBossAppeared;
         }
     }
 
@@ -131,6 +139,7 @@ public class GameMenus : MonoBehaviour
             case MenuScreen.HowToPlay:
             case MenuScreen.Options:
             case MenuScreen.Credits:
+            case MenuScreen.Ranking:
                 Open(returnTo);
                 break;
         }
@@ -228,6 +237,21 @@ public class GameMenus : MonoBehaviour
         RefreshDynamicTexts();
     }
 
+    private void ToggleEffects()
+    {
+        GameProgress.ScreenEffects = !GameProgress.ScreenEffects;
+        ImpactFx.ScreenEffectsEnabled = GameProgress.ScreenEffects;
+        GameProgress.Save();
+        RefreshDynamicTexts();
+    }
+
+    private void CycleDifficulty()
+    {
+        GameProgress.Difficulty = (Difficulty)(((int)GameProgress.Difficulty + 1) % 3);
+        GameProgress.Save();
+        RefreshDynamicTexts();
+    }
+
     private void OnStateChanged(GameState state)
     {
         if (state != GameState.Playing)
@@ -239,7 +263,7 @@ public class GameMenus : MonoBehaviour
     private IEnumerator ShowResultAfterDelay(GameState state)
     {
         yield return new WaitForSeconds(state == GameState.Victory ? 0.8f : 1.5f);
-        resultTitle.text = state == GameState.Victory ? "VITORIA!" : "VOCE MORREU";
+        resultTitle.text = state == GameState.Victory ? "VITÓRIA!" : "VOCÊ MORREU";
         resultBody.text = BuildResultText(state);
         Open(MenuScreen.Result);
     }
@@ -250,15 +274,28 @@ public class GameMenus : MonoBehaviour
         int seconds = Mathf.FloorToInt(score.Elapsed % 60f);
 
         StringBuilder text = new StringBuilder();
-        text.AppendLine("Pontuacao: " + score.Score);
-        text.AppendLine(score.NewRecord ? "NOVO RECORDE!" : "Recorde: " + score.HighScore);
+        text.AppendLine("Pontuação: " + score.Score);
+        if (score.NewRecord)
+        {
+            text.AppendLine("NOVO RECORDE!");
+        }
+        else if (score.Rank > 0)
+        {
+            text.AppendLine("Você entrou no ranking: " + score.Rank + "º lugar");
+        }
+        else
+        {
+            text.AppendLine("Recorde: " + score.HighScore);
+        }
+
         text.AppendLine("Zumbis derrotados: " + score.Kills);
         text.AppendLine("Maior combo: " + score.BestCombo);
-        text.AppendLine("Estrelas: " + score.TotalStars + "/" + (stage.StageCount * 3));
-        text.Append("Tempo: " + minutes.ToString("00") + ":" + seconds.ToString("00"));
+        text.AppendLine("Estrelas: " + score.TotalStars + "/" + (stage.StageCount * ScoreCalculator.MaxStars));
+        text.AppendLine("Tempo: " + minutes.ToString("00") + ":" + seconds.ToString("00"));
+        text.Append("Dificuldade: " + DifficultyProfile.Current.Label);
         if (state == GameState.GameOver)
         {
-            text.Append("\nFase alcancada: " + (stage.StageIndex + 1) + "/" + stage.StageCount);
+            text.Append("\nFase alcançada: " + (stage.StageIndex + 1) + "/" + stage.StageCount);
         }
 
         return text.ToString();
@@ -272,13 +309,28 @@ public class GameMenus : MonoBehaviour
         }
     }
 
+    private void OnBossAppeared()
+    {
+        if (current == MenuScreen.None)
+        {
+            ShowBanner("CHEFE!", "Derrote-o para vencer.");
+        }
+    }
+
     private void ShowIntro(int stageIndex)
     {
+        ShowBanner(
+            "FASE " + (stageIndex + 1) + "/" + stage.StageCount,
+            stageIndex == stage.StageCount - 1
+                ? "Última fase! Derrote todos os zumbis e o chefe."
+                : "Elimine todos os zumbis e siga para a direita.");
+    }
+
+    private void ShowBanner(string title, string subtitle)
+    {
         HideIntro();
-        introTitle.text = "FASE " + (stageIndex + 1) + "/" + stage.StageCount;
-        introSubtitle.text = stageIndex == stage.StageCount - 1
-            ? "Ultima fase! Derrote todos os zumbis e o chefe."
-            : "Elimine todos os zumbis e siga para a direita.";
+        introTitle.text = title;
+        introSubtitle.text = subtitle;
         introRoot.SetActive(true);
         introRoutine = StartCoroutine(HideIntroAfterDelay());
     }
@@ -304,15 +356,51 @@ public class GameMenus : MonoBehaviour
     private void RefreshDynamicTexts()
     {
         volumeLabel.text = "Volume: " + Mathf.RoundToInt(GameProgress.Volume * 100f) + "%";
-        UiFactory.SetButtonText(fullscreenButton, "Tela cheia: " + (Screen.fullScreen ? "Sim" : "Nao"));
+        UiFactory.SetButtonText(fullscreenButton, "Tela cheia: " + (Screen.fullScreen ? "Sim" : "Não"));
+        UiFactory.SetButtonText(effectsButton, "Tremor e pausa nos golpes: " + (GameProgress.ScreenEffects ? "Sim" : "Não"));
+        UiFactory.SetButtonText(difficultyButton, "Dificuldade: " + DifficultyProfile.Get(GameProgress.Difficulty).Label);
 
         int unlocked = GameProgress.UnlockedStage;
         for (int i = 0; i < stageButtons.Count; i++)
         {
             bool isUnlocked = i <= unlocked;
             stageButtons[i].interactable = isUnlocked;
-            UiFactory.SetButtonText(stageButtons[i], isUnlocked ? "Fase " + (i + 1) : "Fase " + (i + 1) + " (bloqueada)");
+
+            string label = "Fase " + (i + 1);
+            if (!isUnlocked)
+            {
+                label += " (bloqueada)";
+            }
+            else if (GameProgress.GetStageStars(i) > 0)
+            {
+                label += "  -  " + GameProgress.GetStageStars(i) + "/" + ScoreCalculator.MaxStars + " estrelas";
+            }
+
+            UiFactory.SetButtonText(stageButtons[i], label);
         }
+
+        rankingBody.text = BuildRankingText();
+    }
+
+    private static string BuildRankingText()
+    {
+        int[] scores = GameProgress.TopScores;
+        if (scores.Length == 0)
+        {
+            return "Ainda não há pontuações.\nJogue uma partida!";
+        }
+
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < scores.Length; i++)
+        {
+            text.Append(i + 1).Append("º   ").Append(scores[i]);
+            if (i < scores.Length - 1)
+            {
+                text.Append('\n');
+            }
+        }
+
+        return text.ToString();
     }
 
     private void BuildAll()
@@ -321,9 +409,10 @@ public class GameMenus : MonoBehaviour
 
         BuildMain(canvas.transform);
         BuildStageSelect(canvas.transform);
-        BuildInfoScreen(canvas.transform, MenuScreen.HowToPlay, "COMO JOGAR", HowToPlayText, 300f);
+        BuildInfoScreen(canvas.transform, MenuScreen.HowToPlay, "COMO JOGAR", HowToPlayText, 340f);
         BuildOptions(canvas.transform);
-        BuildInfoScreen(canvas.transform, MenuScreen.Credits, "CREDITOS", Credits, 220f);
+        BuildInfoScreen(canvas.transform, MenuScreen.Credits, "CRÉDITOS", Credits, 220f);
+        BuildRanking(canvas.transform);
         BuildPause(canvas.transform);
         BuildResult(canvas.transform);
         BuildIntro(canvas.transform);
@@ -354,9 +443,10 @@ public class GameMenus : MonoBehaviour
         UiFactory.CreateLabel(panel, "Beat'em up 2D", 24, 36f, UiFactory.MutedColor);
         AddButton(panel, MenuScreen.Main, "Jogar", StartGame);
         AddButton(panel, MenuScreen.Main, "Selecionar fase", () => OpenSub(MenuScreen.StageSelect));
+        AddButton(panel, MenuScreen.Main, "Ranking", () => OpenSub(MenuScreen.Ranking));
         AddButton(panel, MenuScreen.Main, "Como jogar", () => OpenSub(MenuScreen.HowToPlay));
-        AddButton(panel, MenuScreen.Main, "Opcoes", () => OpenSub(MenuScreen.Options));
-        AddButton(panel, MenuScreen.Main, "Creditos", () => OpenSub(MenuScreen.Credits));
+        AddButton(panel, MenuScreen.Main, "Opções", () => OpenSub(MenuScreen.Options));
+        AddButton(panel, MenuScreen.Main, "Créditos", () => OpenSub(MenuScreen.Credits));
         AddButton(panel, MenuScreen.Main, "Sair", QuitGame);
     }
 
@@ -366,7 +456,9 @@ public class GameMenus : MonoBehaviour
         for (int i = 0; i < stage.StageCount; i++)
         {
             int stageIndex = i;
-            stageButtons.Add(AddButton(panel, MenuScreen.StageSelect, "Fase " + (i + 1), () => GameSession.Restart(stageIndex, false)));
+            Button button = AddButton(panel, MenuScreen.StageSelect, "Fase " + (i + 1), () => GameSession.Restart(stageIndex, false));
+            button.GetComponent<LayoutElement>().preferredWidth = 460f;
+            stageButtons.Add(button);
         }
 
         AddButton(panel, MenuScreen.StageSelect, "Voltar", () => Open(returnTo));
@@ -379,9 +471,16 @@ public class GameMenus : MonoBehaviour
         AddButton(panel, screen, "Voltar", () => Open(returnTo));
     }
 
+    private void BuildRanking(Transform parent)
+    {
+        RectTransform panel = CreateScreen(parent, MenuScreen.Ranking, "RANKING");
+        rankingBody = UiFactory.CreateLabel(panel, string.Empty, 30, 230f, Color.white, FontStyle.Bold);
+        AddButton(panel, MenuScreen.Ranking, "Voltar", () => Open(returnTo));
+    }
+
     private void BuildOptions(Transform parent)
     {
-        RectTransform panel = CreateScreen(parent, MenuScreen.Options, "OPCOES");
+        RectTransform panel = CreateScreen(parent, MenuScreen.Options, "OPÇÕES");
 
         RectTransform row = UiFactory.CreateRow(panel, 50f);
         Button minus = UiFactory.CreateButton(row, "-", () => ChangeVolume(-VolumeStep), 70f);
@@ -390,7 +489,10 @@ public class GameMenus : MonoBehaviour
         volumeLabel.GetComponent<LayoutElement>().preferredWidth = 240f;
         UiFactory.CreateButton(row, "+", () => ChangeVolume(VolumeStep), 70f);
 
-        fullscreenButton = UiFactory.CreateButton(panel, "Tela cheia", ToggleFullscreen);
+        fullscreenButton = UiFactory.CreateButton(panel, "Tela cheia", ToggleFullscreen, 520f);
+        effectsButton = UiFactory.CreateButton(panel, "Tremor e pausa nos golpes", ToggleEffects, 520f);
+        difficultyButton = UiFactory.CreateButton(panel, "Dificuldade", CycleDifficulty, 520f);
+        UiFactory.CreateLabel(panel, "A dificuldade vale a partir da próxima partida.", 20, 28f, UiFactory.MutedColor);
         AddButton(panel, MenuScreen.Options, "Voltar", () => Open(returnTo));
     }
 
@@ -400,7 +502,7 @@ public class GameMenus : MonoBehaviour
         AddButton(panel, MenuScreen.Pause, "Continuar", () => Open(MenuScreen.None));
         AddButton(panel, MenuScreen.Pause, "Reiniciar fase", () => GameSession.Restart(stage.StageIndex, false));
         AddButton(panel, MenuScreen.Pause, "Como jogar", () => OpenSub(MenuScreen.HowToPlay));
-        AddButton(panel, MenuScreen.Pause, "Opcoes", () => OpenSub(MenuScreen.Options));
+        AddButton(panel, MenuScreen.Pause, "Opções", () => OpenSub(MenuScreen.Options));
         AddButton(panel, MenuScreen.Pause, "Menu principal", () => GameSession.Restart(0, true));
     }
 
@@ -408,7 +510,7 @@ public class GameMenus : MonoBehaviour
     {
         RectTransform panel = CreateScreen(parent, MenuScreen.Result, "RESULTADO");
         resultTitle = panel.GetChild(0).GetComponent<Text>();
-        resultBody = UiFactory.CreateLabel(panel, string.Empty, 28, 260f, Color.white);
+        resultBody = UiFactory.CreateLabel(panel, string.Empty, 28, 300f, Color.white);
         AddButton(panel, MenuScreen.Result, "Jogar novamente (R)", () => GameSession.Restart(0, false));
         AddButton(panel, MenuScreen.Result, "Menu principal", () => GameSession.Restart(0, true));
     }

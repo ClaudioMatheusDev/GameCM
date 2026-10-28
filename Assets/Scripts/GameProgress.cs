@@ -12,6 +12,54 @@ public static class GameProgress
     private static string UnlockedStageKey => KeyPrefix + "UnlockedStage";
     private static string VolumeKey => KeyPrefix + "Volume";
     private static string FullscreenKey => KeyPrefix + "Fullscreen";
+    private static string EffectsKey => KeyPrefix + "ScreenEffects";
+    private static string DifficultyKey => KeyPrefix + "Difficulty";
+    private static string TopScoresKey => KeyPrefix + "TopScores";
+    private static string StarsKey(int stageIndex) => KeyPrefix + "Stars." + stageIndex;
+
+    private const int MaxStageSlots = 16;
+
+    /// <summary>Tremor de camera e pausa curta nos golpes (acessibilidade).</summary>
+    public static bool ScreenEffects
+    {
+        get => PlayerPrefs.GetInt(EffectsKey, 1) == 1;
+        set => PlayerPrefs.SetInt(EffectsKey, value ? 1 : 0);
+    }
+
+    public static Difficulty Difficulty
+    {
+        get => (Difficulty)Mathf.Clamp(PlayerPrefs.GetInt(DifficultyKey, (int)Difficulty.Normal), 0, 2);
+        set => PlayerPrefs.SetInt(DifficultyKey, (int)value);
+    }
+
+    public static int[] TopScores => ScoreBoard.Parse(PlayerPrefs.GetString(TopScoresKey, string.Empty));
+
+    public static int GetStageStars(int stageIndex)
+    {
+        return Mathf.Clamp(PlayerPrefs.GetInt(StarsKey(stageIndex), 0), 0, ScoreCalculator.MaxStars);
+    }
+
+    /// <summary>Guarda as estrelas de uma fase se forem melhores que as ja salvas.</summary>
+    public static void SubmitStageStars(int stageIndex, int stars)
+    {
+        if (stars > GetStageStars(stageIndex))
+        {
+            PlayerPrefs.SetInt(StarsKey(stageIndex), Mathf.Min(stars, ScoreCalculator.MaxStars));
+        }
+    }
+
+    /// <summary>Registra a pontuacao no ranking e devolve a posicao (1 = melhor, 0 = nao entrou).</summary>
+    public static int RegisterScore(int score)
+    {
+        int[] updated = ScoreBoard.Insert(TopScores, score, out int rank);
+        PlayerPrefs.SetString(TopScoresKey, ScoreBoard.Serialize(updated));
+        if (updated.Length > 0)
+        {
+            HighScore = updated[0];
+        }
+
+        return rank;
+    }
 
     public static int HighScore
     {
@@ -67,5 +115,12 @@ public static class GameProgress
         PlayerPrefs.DeleteKey(UnlockedStageKey);
         PlayerPrefs.DeleteKey(VolumeKey);
         PlayerPrefs.DeleteKey(FullscreenKey);
+        PlayerPrefs.DeleteKey(EffectsKey);
+        PlayerPrefs.DeleteKey(DifficultyKey);
+        PlayerPrefs.DeleteKey(TopScoresKey);
+        for (int i = 0; i < MaxStageSlots; i++)
+        {
+            PlayerPrefs.DeleteKey(StarsKey(i));
+        }
     }
 }
