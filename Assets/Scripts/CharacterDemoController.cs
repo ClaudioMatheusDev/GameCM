@@ -37,6 +37,10 @@ public class CharacterDemoController : MonoBehaviour
 
         GetOrAdd<SfxPlayer>().Configure(sounds);
         GetOrAdd<HitStop>();
+        if (ParticleFx.Instance == null)
+        {
+            new GameObject("Particle Effects").AddComponent<ParticleFx>();
+        }
         if (stageCamera.GetComponent<CameraShake>() == null)
         {
             stageCamera.gameObject.AddComponent<CameraShake>();

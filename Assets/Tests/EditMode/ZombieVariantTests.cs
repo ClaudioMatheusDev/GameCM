@@ -56,4 +56,17 @@ public class ZombieVariantTests
         Assert.AreEqual(150, ScoreCalculator.KillPoints(1, 1.5f));
         Assert.AreEqual(1000, ScoreCalculator.KillPoints(1, ZombieVariant.Get(ZombieType.Boss).ScoreMultiplier));
     }
+
+    [Test]
+    public void DropChancesFavorTougherZombiesAndSkipTheBoss()
+    {
+        ZombieVariant normal = ZombieVariant.Get(ZombieType.Normal);
+        ZombieVariant tank = ZombieVariant.Get(ZombieType.Tank);
+        ZombieVariant boss = ZombieVariant.Get(ZombieType.Boss);
+
+        Assert.Greater(tank.DropChance, normal.DropChance);
+        Assert.Greater(tank.HealAmount, normal.HealAmount);
+        Assert.AreEqual(0f, boss.DropChance);
+        Assert.IsTrue(normal.DropChance > 0f && normal.DropChance < 1f);
+    }
 }

@@ -53,6 +53,8 @@ public class PlayerController : MonoBehaviour
     private float hurtTimer;
     private float knockbackVelocity;
     private float facing = 1f;
+    private float dustTimer;
+    private bool wasJumping;
     private readonly List<Collider2D> hitBuffer = new List<Collider2D>(16);
     private ContactFilter2D hitFilter;
 
@@ -61,6 +63,7 @@ public class PlayerController : MonoBehaviour
     public Health Health => health;
     public bool IsDead => health != null && health.IsDead;
     public bool InputLocked { get; set; }
+    private Vector3 FeetPosition => new Vector3(transform.position.x, spriteRenderer.bounds.min.y, transform.position.z);
     public float PowerCooldownRemaining => powerCooldownTimer;
     public bool RestartPressed => input != null && input.RestartPressed;
     public bool BackPressed => input != null && input.BackPressed;
@@ -96,6 +99,7 @@ public class PlayerController : MonoBehaviour
         {
             SfxPlayer.Play(Sfx.PlayerHurt);
             ImpactFx.Play(Fx.PlayerHurt);
+            ParticleFx.PlayerHurt(spriteRenderer.bounds.center);
             hurtTimer = settings.hurtDuration;
             knockbackVelocity = Mathf.Sign(transform.position.x - sourceX) * settings.hurtKnockback;
         }
@@ -176,6 +180,7 @@ public class PlayerController : MonoBehaviour
         position.x = Mathf.Clamp(position.x, settings.stageStartX, settings.stageEndX);
         bool isJumping = UpdateJump(ref position, deltaTime);
         transform.position = position;
+        UpdateDust(deltaTime, isJumping, isHurt, direction, sprinting);
 
         if (direction != 0f && !attacking)
         {
@@ -198,6 +203,7 @@ public class PlayerController : MonoBehaviour
         {
             jumpTimer = 0f;
             SfxPlayer.Play(Sfx.Jump);
+            ParticleFx.Dust(FeetPosition, 6);
         }
 
         if (attackTimer > 0f)
@@ -213,6 +219,28 @@ public class PlayerController : MonoBehaviour
         else if (input.PunchPressed)
         {
             StartAttack("Punch", settings.punchDuration, false);
+        }
+    }
+
+    private void UpdateDust(float deltaTime, bool isJumping, bool isHurt, float direction, bool sprinting)
+    {
+        if (wasJumping && !isJumping)
+        {
+            ParticleFx.Dust(FeetPosition, 8);
+        }
+
+        wasJumping = isJumping;
+        if (isJumping || isHurt || direction == 0f)
+        {
+            dustTimer = 0f;
+            return;
+        }
+
+        dustTimer -= deltaTime;
+        if (dustTimer <= 0f)
+        {
+            ParticleFx.Dust(FeetPosition, 2);
+            dustTimer = sprinting ? 0.07f : 0.14f;
         }
     }
 
@@ -286,6 +314,11 @@ public class PlayerController : MonoBehaviour
         Bounds body = spriteRenderer.bounds;
         Vector2 center = new Vector2(transform.position.x + facing * range * 0.5f, body.center.y);
         Vector2 size = new Vector2(range, Mathf.Max(body.size.y, 1.5f));
+
+        if (attackIsPower)
+        {
+            ParticleFx.PowerBurst(center);
+        }
 
         Physics2D.SyncTransforms();
         hitBuffer.Clear();

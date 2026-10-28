@@ -12,7 +12,8 @@ public enum Sfx
     ZombieDeath,
     UiClick,
     UiSelect,
-    BossRoar
+    BossRoar,
+    Pickup
 }
 
 [Serializable]
@@ -25,6 +26,7 @@ public class SoundBank
     public AudioClip death;
     public AudioClip uiClick;
     public AudioClip uiSelect;
+    public AudioClip pickup;
 }
 
 /// <summary>
@@ -201,6 +203,8 @@ public class SfxPlayer : MonoBehaviour
                 return new Playback(bank.uiSelect, 0.6f, 1f, 0.3f);
             case Sfx.BossRoar:
                 return new Playback(bank.power, 1f, 0.6f, 1.5f);
+            case Sfx.Pickup:
+                return new Playback(bank.pickup, 0.8f, 1f, 0.6f);
             default:
                 return default;
         }

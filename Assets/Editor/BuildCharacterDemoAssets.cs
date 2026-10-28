@@ -348,12 +348,12 @@ public static class BuildCharacterDemoAssets
         return clip;
     }
 
-    private static readonly string[] SoundFields = { "punch", "power", "jump", "hurt", "death", "uiClick", "uiSelect" };
+    private static readonly string[] SoundFields = { "punch", "power", "jump", "hurt", "death", "uiClick", "uiSelect", "pickup" };
 
     private static readonly string[] SoundFiles =
     {
         "punch-song.mp3", "power-song.mp3", "JumpSonge.mp3", "hurt-song.mp3", "death-song.mp3",
-        "menu-click.wav", "menu-select.wav"
+        "menu-click.wav", "menu-select.wav", "pickup.wav"
     };
 
     private static AudioClip[] LoadSoundBank()

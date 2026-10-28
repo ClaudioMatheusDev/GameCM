@@ -58,6 +58,7 @@ public class ZombieController : MonoBehaviour
     private float chargeTimer;
     private float chargeDirection;
     private float knockbackVelocity;
+    private float chargeDustTimer;
     private float minX;
     private float maxX;
 
@@ -68,6 +69,7 @@ public class ZombieController : MonoBehaviour
     public Health Health => health;
     public bool IsBoss => variant != null && variant.Type == ZombieType.Boss;
     public bool IsAlive => state != State.Dying;
+    public Vector3 FeetPosition => new Vector3(transform.position.x, spriteRenderer.bounds.min.y, transform.position.z);
 
     private float StopDistance => settings.stopDistance * variant.ScaleMultiplier;
     private float AttackRange => settings.attackRange * variant.ScaleMultiplier;
@@ -134,7 +136,21 @@ public class ZombieController : MonoBehaviour
 
         float away = Mathf.Sign(transform.position.x - player.transform.position.x);
         knockbackVelocity = away * knockbackSpeed * (1f - variant.KnockbackResistance);
-        return health.TakeDamage(damage);
+        bool applied = health.TakeDamage(damage);
+        if (applied)
+        {
+            Vector3 center = transform.TransformPoint(hitBox.offset);
+            if (IsAlive)
+            {
+                ParticleFx.Hit(center, away);
+            }
+            else
+            {
+                ParticleFx.Kill(center, away);
+            }
+        }
+
+        return applied;
     }
 
     private void Update()
@@ -215,6 +231,13 @@ public class ZombieController : MonoBehaviour
         Vector3 position = transform.position;
         position.x = Mathf.Clamp(position.x + chargeDirection * MoveSpeed * settings.chargeSpeedMultiplier * deltaTime, minX, maxX);
         transform.position = position;
+
+        chargeDustTimer -= deltaTime;
+        if (chargeDustTimer <= 0f)
+        {
+            ParticleFx.Dust(FeetPosition, 3);
+            chargeDustTimer = 0.05f;
+        }
 
         if (!player.IsDead)
         {
@@ -339,6 +362,7 @@ public class ZombieController : MonoBehaviour
         if (IsBoss)
         {
             ImpactFx.Play(Fx.BossDeath);
+            ParticleFx.BossDeath(transform.TransformPoint(hitBox.offset));
         }
 
         Died?.Invoke(this);

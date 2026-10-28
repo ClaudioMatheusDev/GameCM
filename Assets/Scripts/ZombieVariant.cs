@@ -20,6 +20,8 @@ public sealed class ZombieVariant
     public float StaggerMultiplier = 1f;
     public float ScoreMultiplier = 1f;
     public Color Tint = Color.white;
+    public float DropChance = 0.12f;
+    public int HealAmount = 1;
     public bool Charges;
 
     private static readonly ZombieVariant NormalVariant = new ZombieVariant { Type = ZombieType.Normal };
@@ -31,6 +33,7 @@ public sealed class ZombieVariant
         SpeedMultiplier = 2f,
         ScaleMultiplier = 0.85f,
         ScoreMultiplier = 1.5f,
+        DropChance = 0.1f,
         Tint = new Color(0.75f, 1f, 0.75f, 1f)
     };
 
@@ -44,6 +47,8 @@ public sealed class ZombieVariant
         KnockbackResistance = 0.5f,
         StaggerMultiplier = 0.6f,
         ScoreMultiplier = 2.5f,
+        DropChance = 0.4f,
+        HealAmount = 2,
         Tint = new Color(0.8f, 0.7f, 1f, 1f)
     };
 
@@ -57,6 +62,7 @@ public sealed class ZombieVariant
         KnockbackResistance = 0.9f,
         StaggerMultiplier = 0.3f,
         ScoreMultiplier = 10f,
+        DropChance = 0f,
         Tint = new Color(1f, 0.65f, 0.65f, 1f),
         Charges = true
     };

@@ -12,6 +12,7 @@ public class Health : MonoBehaviour
 
     public event Action<int> Damaged;
     public event Action Died;
+    public event Action<int> Healed;
 
     public int Max => maxHealth;
     public int Current
@@ -52,6 +53,21 @@ public class Health : MonoBehaviour
             Died?.Invoke();
         }
 
+        return true;
+    }
+
+    /// <summary>Recupera vida ate o maximo. Retorna false se nada foi curado (vida cheia, morto ou valor invalido).</summary>
+    public bool Heal(int amount)
+    {
+        EnsureInitialized();
+        if (amount <= 0 || IsDead || current >= maxHealth)
+        {
+            return false;
+        }
+
+        int before = current;
+        current = Mathf.Min(maxHealth, current + amount);
+        Healed?.Invoke(current - before);
         return true;
     }
 

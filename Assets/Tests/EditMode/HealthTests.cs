@@ -88,4 +88,33 @@ public class HealthTests
         Assert.IsFalse(health.IsDead);
         Assert.AreEqual(2, health.Current);
     }
+
+    [Test]
+    public void HealRestoresUpToMaxAndRaisesEvent()
+    {
+        int healed = 0;
+        health.Healed += amount => healed = amount;
+        health.TakeDamage(2);
+        health.Tick(5f);
+
+        Assert.IsTrue(health.Heal(5));
+
+        Assert.AreEqual(3, health.Current);
+        Assert.AreEqual(2, healed);
+    }
+
+    [Test]
+    public void HealFailsAtFullHealthDeadOrInvalidAmount()
+    {
+        Assert.IsFalse(health.Heal(1));
+
+        health.TakeDamage(1);
+        Assert.IsFalse(health.Heal(0));
+        Assert.IsFalse(health.Heal(-1));
+
+        health.Tick(5f);
+        health.TakeDamage(10);
+        Assert.IsFalse(health.Heal(1));
+        Assert.AreEqual(0, health.Current);
+    }
 }
