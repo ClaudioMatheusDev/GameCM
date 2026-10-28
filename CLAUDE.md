@@ -14,4 +14,8 @@ Projeto Unity 6 (6000.4.8f1), 2D/URP, Input System. Leia o `README.md` para cont
 - Particulas sempre via `ParticleFx.X(...)` (sao seguras sem a instancia). Itens de cura nascem em `StageManager.TryDropPickup`; a chance e o valor de cura ficam em `ZombieVariant`.
 - Dificuldade: `DifficultyProfile.Current` e lido uma vez por partida (em `StageManager.Configure`); ranking e estrelas ficam em `GameProgress`/`ScoreBoard`.
 - Combate do jogador: combo de 3 socos em `PlayerController.StartPunch`; zumbis (exceto a investida do chefe) avisam o golpe com `attackWindup`.
+- Camera: `CameraRig` segue o jogador (limites do cenario) e aplica o tremor; novos efeitos de camera passam por ele. O fundo largo e `ScrollingBackground`; o cenario tem `StageSettings.stageHalfWidth` de cada lado do centro.
+- Modos: `GameSession.Mode` (campanha ou infinito) e fixado antes de recarregar a cena; em `StageManager`, no modo infinito `StageIndex` e o indice da onda (regras em `EndlessWaves`).
+- Power-ups: `PowerUpState` guarda os tempos no `PlayerController`; novos tipos entram em `PowerUpType`, `PowerUpState.Label/Tint`, `PixelSprites.PowerUp` e nos efeitos do `PlayerController`.
+- Teclas: `GameInput` le `KeyBindings`; ao remapear, chame `PlayerController.ReloadInput()`. Testes que mexem nelas devem trocar `GameProgress.KeyPrefix` e chamar `KeyBindings.Reload()`.
 - Testes que usam `GameProgress` devem trocar `GameProgress.KeyPrefix` para nao apagar o progresso real.

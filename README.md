@@ -22,6 +22,14 @@ Abra o projeto na Unity, abra `Assets/Scenes/GameScene.unity` e aperte Play.
 
 **Dificuldade (Opcoes):** Facil (mais vida, zumbis mais lentos e em menor numero), Normal e Dificil (menos vida, zumbis mais rapidos e numerosos). Vale a partir da proxima partida e altera a pontuacao.
 
+**Modos:** *Campanha* (4 fases, chefe na ultima) e *Modo infinito* (ondas sem fim, cada vez maiores; chefe a cada 5 ondas, zumbis mais fortes com o tempo e bonus por onda vencida). Os dois tem ranking proprio.
+
+**Camera:** o cenario e largo e a camera segue o jogador; os zumbis entram pelas bordas da tela. O fundo se repete espelhado, sem emendas.
+
+**Power-ups (8 s):** zumbis tambem podem soltar um item colorido: raio amarelo (velocidade), seta laranja (forca, dano em dobro) ou escudo azul (invulnerabilidade). O personagem muda de cor enquanto o efeito dura e o tempo aparece no HUD.
+
+**Controles configuraveis:** em Opcoes > Controles voce troca as teclas de esquerda, direita, pular, soco, poder e correr. Se a tecla ja estiver em uso, as duas acoes trocam de tecla. Esc fica reservado, e setas e gamepad continuam valendo.
+
 **Itens de cura:** zumbis podem soltar um coracao (mais chance nos resistentes e quando voce esta com pouca vida). Encoste para recuperar vida; com a vida cheia o item espera no chao e some depois de alguns segundos.
 
 **Objetivo:** elimine todos os zumbis da fase e va ate a borda direita da tela para avancar. Venca a fase 4 para ganhar. Voce tem 5 pontos de vida; zumbis causam dano ao encostar (pular ajuda a desviar) e voce fica invulneravel por um instante depois de ser atingido.
@@ -63,7 +71,11 @@ Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principa
 - `DifficultyProfile`: ajustes de dificuldade (vida do jogador, velocidade e quantidade de zumbis, pontuacao).
 - `ScoreBoard`: ranking local (top 5) em logica pura; `ScreenFader`: fade entre fases.
 - `ZombieVariant` / `ZombieSpawnTable`: tipos de zumbi (normal, rapido, resistente, chefe) e sorteio por fase.
-- `CameraShake` / `HitStop` / `ImpactFx`: tremor de camera e pausa curta ao acertar golpes, matar zumbis, levar dano e nas investidas do chefe.
+- `CameraRig` / `HitStop` / `ImpactFx`: camera que segue o jogador, tremor e pausa curta ao acertar golpes, matar zumbis, levar dano e nas investidas do chefe.
+- `ScrollingBackground`: repete o fundo espelhado para cobrir o cenario largo.
+- `PowerUpState` / `PowerUpPickup`: power-ups temporarios (velocidade, forca, escudo).
+- `EndlessWaves`: regras das ondas do modo infinito.
+- `KeyBindings`: teclas configuraveis (salvas em PlayerPrefs).
 - `HealthPickup` / `PixelSprites`: item de cura (sprite gerado em codigo).
 - `ParticleFx`: particulas (faiscas, sangue, poeira, cura, explosao do chefe) em um unico `ParticleSystem` compartilhado.
 - `SfxPlayer`: efeitos sonoros (soco, poder, pulo, dano, morte e menus) com cortes por duracao maxima.

@@ -81,6 +81,11 @@ public class ParticleFx : MonoBehaviour
         Emit(position, 24, Spark, Orange, 4f, 10f, 0.1f, 0.2f, 0.3f, 0.7f, 90f, 180f);
     }
 
+    public static void PowerUpBurst(Vector3 position, Color color)
+    {
+        Emit(position, 16, color, Color.white, 1.5f, 4.5f, 0.08f, 0.16f, 0.4f, 0.8f, 90f, 180f);
+    }
+
     private static float DirectionAngle(float direction)
     {
         return direction >= 0f ? 0f : 180f;

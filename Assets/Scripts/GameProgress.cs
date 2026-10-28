@@ -32,7 +32,17 @@ public static class GameProgress
         set => PlayerPrefs.SetInt(DifficultyKey, (int)value);
     }
 
-    public static int[] TopScores => ScoreBoard.Parse(PlayerPrefs.GetString(TopScoresKey, string.Empty));
+    private static string TopScoresKeyFor(GameMode mode)
+    {
+        return mode == GameMode.Endless ? TopScoresKey + ".Endless" : TopScoresKey;
+    }
+
+    public static int[] TopScores => TopScoresFor(GameMode.Campaign);
+
+    public static int[] TopScoresFor(GameMode mode)
+    {
+        return ScoreBoard.Parse(PlayerPrefs.GetString(TopScoresKeyFor(mode), string.Empty));
+    }
 
     public static int GetStageStars(int stageIndex)
     {
@@ -51,9 +61,14 @@ public static class GameProgress
     /// <summary>Registra a pontuacao no ranking e devolve a posicao (1 = melhor, 0 = nao entrou).</summary>
     public static int RegisterScore(int score)
     {
-        int[] updated = ScoreBoard.Insert(TopScores, score, out int rank);
-        PlayerPrefs.SetString(TopScoresKey, ScoreBoard.Serialize(updated));
-        if (updated.Length > 0)
+        return RegisterScore(score, GameMode.Campaign);
+    }
+
+    public static int RegisterScore(int score, GameMode mode)
+    {
+        int[] updated = ScoreBoard.Insert(TopScoresFor(mode), score, out int rank);
+        PlayerPrefs.SetString(TopScoresKeyFor(mode), ScoreBoard.Serialize(updated));
+        if (mode == GameMode.Campaign && updated.Length > 0)
         {
             HighScore = updated[0];
         }
@@ -118,6 +133,7 @@ public static class GameProgress
         PlayerPrefs.DeleteKey(EffectsKey);
         PlayerPrefs.DeleteKey(DifficultyKey);
         PlayerPrefs.DeleteKey(TopScoresKey);
+        PlayerPrefs.DeleteKey(TopScoresKey + ".Endless");
         for (int i = 0; i < MaxStageSlots; i++)
         {
             PlayerPrefs.DeleteKey(StarsKey(i));

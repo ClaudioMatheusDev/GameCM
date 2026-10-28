@@ -46,9 +46,9 @@ public static class ImpactFx
             return;
         }
 
-        if (CameraShake.Instance != null)
+        if (CameraRig.Instance != null)
         {
-            CameraShake.Instance.Shake(shakeMagnitude, shakeSeconds);
+            CameraRig.Instance.Shake(shakeMagnitude, shakeSeconds);
         }
 
         if (freezeSeconds > 0f && HitStop.Instance != null)

@@ -41,9 +41,28 @@ public class GameBootstrap : MonoBehaviour
         {
             new GameObject("Particle Effects").AddComponent<ParticleFx>();
         }
-        if (stageCamera.GetComponent<CameraShake>() == null)
+        CameraRig rig = stageCamera.GetComponent<CameraRig>();
+        if (rig == null)
         {
-            stageCamera.gameObject.AddComponent<CameraShake>();
+            rig = stageCamera.gameObject.AddComponent<CameraRig>();
+        }
+
+        if (stageSettings.scrolling)
+        {
+            playerSettings.stageStartX = -stageSettings.stageHalfWidth;
+            playerSettings.stageEndX = stageSettings.stageHalfWidth;
+        }
+
+        Vector3 startPosition = transform.position;
+        startPosition.x = playerSettings.stageStartX + playerSettings.startOffset;
+        transform.position = startPosition;
+
+        if (stageSettings.scrolling)
+        {
+            rig.Follow(
+                transform,
+                playerSettings.stageStartX - stageSettings.cameraMargin,
+                playerSettings.stageEndX + stageSettings.cameraMargin);
         }
 
         DifficultyProfile.Refresh();

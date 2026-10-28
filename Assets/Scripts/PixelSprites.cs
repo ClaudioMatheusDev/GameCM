@@ -17,7 +17,44 @@ public static class PixelSprites
         "....X...."
     };
 
+    private static readonly string[] BoltPattern =
+    {
+        ".....XX..",
+        "....XX...",
+        "...XX....",
+        "..XXXXX..",
+        ".....XX..",
+        "....XX...",
+        "...XX....",
+        "..X......"
+    };
+
+    private static readonly string[] StrengthPattern =
+    {
+        "....X....",
+        "...XXX...",
+        "..XXXXX..",
+        ".XXXXXXX.",
+        "...XXX...",
+        "...XXX...",
+        "...XXX...",
+        "...XXX..."
+    };
+
+    private static readonly string[] ShieldPattern =
+    {
+        ".XXXXXXX.",
+        "XXXXXXXXX",
+        "XXXXXXXXX",
+        "XXXXXXXXX",
+        ".XXXXXXX.",
+        "..XXXXX..",
+        "...XXX...",
+        "....X...."
+    };
+
     private static Sprite heart;
+    private static readonly Sprite[] PowerUps = new Sprite[PowerUpState.TypeCount];
 
     public static Sprite Heart
     {
@@ -25,23 +62,45 @@ public static class PixelSprites
         {
             if (heart == null)
             {
-                heart = BuildHeart();
+                heart = Build(HeartPattern, new Color(0.92f, 0.16f, 0.22f, 1f), new Color(0.25f, 0.02f, 0.08f, 1f), "Heart Pickup");
             }
 
             return heart;
         }
     }
 
-    private static Sprite BuildHeart()
+    public static Sprite PowerUp(PowerUpType type)
     {
-        int rows = HeartPattern.Length;
-        int columns = HeartPattern[0].Length;
+        int index = (int)type;
+        if (PowerUps[index] == null)
+        {
+            string[] pattern;
+            switch (type)
+            {
+                case PowerUpType.Haste:
+                    pattern = BoltPattern;
+                    break;
+                case PowerUpType.Strength:
+                    pattern = StrengthPattern;
+                    break;
+                default:
+                    pattern = ShieldPattern;
+                    break;
+            }
+
+            Color fill = PowerUpState.Tint(type);
+            PowerUps[index] = Build(pattern, fill, new Color(0.08f, 0.08f, 0.12f, 1f), "PowerUp " + type);
+        }
+
+        return PowerUps[index];
+    }
+
+    private static Sprite Build(string[] pattern, Color fill, Color outline, string name)
+    {
+        int rows = pattern.Length;
+        int columns = pattern[0].Length;
         int width = columns + 2;
         int height = rows + 2;
-
-        Color fill = new Color(0.92f, 0.16f, 0.22f, 1f);
-        Color shine = new Color(1f, 0.75f, 0.78f, 1f);
-        Color outline = new Color(0.25f, 0.02f, 0.08f, 1f);
 
         Color[] pixels = new Color[width * height];
         for (int i = 0; i < pixels.Length; i++)
@@ -53,19 +112,19 @@ public static class PixelSprites
         {
             for (int column = 0; column < columns; column++)
             {
-                if (HeartPattern[row][column] != 'X')
+                if (pattern[row][column] != 'X')
                 {
                     continue;
                 }
 
                 // Linha 0 do padrao fica no topo; a textura tem y = 0 embaixo.
-                int x = column + 1;
-                int y = height - 2 - row;
-                pixels[y * width + x] = fill;
+                pixels[(height - 2 - row) * width + column + 1] = fill;
             }
         }
 
-        pixels[(height - 3) * width + 3] = shine;
+        // Brilho: um pixel mais claro perto do canto superior esquerdo da forma.
+        Color shine = Color.Lerp(fill, Color.white, 0.6f);
+        pixels[(height - 3) * width + 3] = pixels[(height - 3) * width + 3].a > 0f ? shine : pixels[(height - 3) * width + 3];
 
         Color[] result = (Color[])pixels.Clone();
         for (int y = 0; y < height; y++)
@@ -85,7 +144,7 @@ public static class PixelSprites
         {
             filterMode = FilterMode.Point,
             wrapMode = TextureWrapMode.Clamp,
-            name = "Heart Pickup"
+            name = name
         };
         texture.SetPixels(result);
         texture.Apply();
