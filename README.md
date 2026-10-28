@@ -30,6 +30,8 @@ Abra o projeto na Unity, abra `Assets/Scenes/GameScene.unity` e aperte Play.
 
 **Controles configuraveis:** em Opcoes > Controles voce troca as teclas de esquerda, direita, pular, soco, poder e correr. Se a tecla ja estiver em uso, as duas acoes trocam de tecla. Esc fica reservado, e setas e gamepad continuam valendo.
 
+**Desempenho:** F3 mostra FPS, tempo de quadro, pior quadro e coletas de lixo. Em Opcoes ha o VSync (ligado por padrao).
+
 **Itens de cura:** zumbis podem soltar um coracao (mais chance nos resistentes e quando voce esta com pouca vida). Encoste para recuperar vida; com a vida cheia o item espera no chao e some depois de alguns segundos.
 
 **Objetivo:** elimine todos os zumbis da fase e va ate a borda direita da tela para avancar. Venca a fase 4 para ganhar. Voce tem 5 pontos de vida; zumbis causam dano ao encostar (pular ajuda a desviar) e voce fica invulneravel por um instante depois de ser atingido.

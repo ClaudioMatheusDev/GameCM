@@ -23,7 +23,7 @@ public static class BuildGameAssets
     private const string ZombieHurtRoot = ZombieRoot + "/hurt/up";
     private const string ZombieDeathRoot = ZombieRoot + "/Death";
     private const string ScenePath = SceneRoot + "/GameScene.unity";
-    private const float PixelsPerUnit = 128f;
+    private const float FrameWorldSize = 12.5f;
     private const float BackgroundPixelsPerUnit = 50f;
     private const float ZombiePixelsPerUnit = 100f;
     private const int SpriteSheetCellSize = 256;
@@ -94,7 +94,7 @@ public static class BuildGameAssets
 
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
-            importer.spritePixelsPerUnit = PixelsPerUnit;
+            importer.spritePixelsPerUnit = PngWidth(path) / FrameWorldSize;
             importer.filterMode = FilterMode.Point;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.SaveAndReimport();
@@ -108,11 +108,9 @@ public static class BuildGameAssets
             .Where(texture => texture != null)
             .ToList()).ToList();
 
-        int maxWidth = rows.SelectMany(row => row).Max(texture => texture.width);
-        int maxHeight = rows.SelectMany(row => row).Max(texture => texture.height);
-        float scale = Mathf.Min(1f, SpriteSheetCellSize / (float)Mathf.Max(maxWidth, maxHeight));
-        int cellWidth = Mathf.Max(1, Mathf.RoundToInt(maxWidth * scale));
-        int cellHeight = Mathf.Max(1, Mathf.RoundToInt(maxHeight * scale));
+        // Os quadros tem tamanhos diferentes (64 e 800 px); cada um e ajustado para caber na celula.
+        int cellWidth = SpriteSheetCellSize;
+        int cellHeight = SpriteSheetCellSize;
         int columns = rows.Max(row => row.Count);
         int width = columns * cellWidth;
         int height = rows.Count * cellHeight;
@@ -127,6 +125,7 @@ public static class BuildGameAssets
             for (int column = 0; column < rows[row].Count; column++)
             {
                 Texture2D frame = rows[row][column];
+                float scale = SpriteSheetCellSize / (float)Mathf.Max(frame.width, frame.height);
                 int frameWidth = Mathf.Max(1, Mathf.RoundToInt(frame.width * scale));
                 int frameHeight = Mathf.Max(1, Mathf.RoundToInt(frame.height * scale));
                 int x = column * cellWidth + (cellWidth - frameWidth) / 2;
@@ -478,6 +477,18 @@ public static class BuildGameAssets
         string name = Path.GetFileNameWithoutExtension(path);
         int dash = name.LastIndexOf('-');
         return dash >= 0 && int.TryParse(name.Substring(dash + 1), out int number) ? number : 0;
+    }
+
+    private static int PngWidth(string assetPath)
+    {
+        // Largura gravada no cabecalho do PNG (4 bytes big-endian a partir do byte 16).
+        byte[] header = new byte[24];
+        using (FileStream stream = File.OpenRead(assetPath))
+        {
+            stream.Read(header, 0, header.Length);
+        }
+
+        return (header[16] << 24) | (header[17] << 16) | (header[18] << 8) | header[19];
     }
 
     private static Texture2D LoadReadableTexture(string assetPath)
