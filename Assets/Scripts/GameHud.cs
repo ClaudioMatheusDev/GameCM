@@ -33,6 +33,8 @@ public class GameHud : MonoBehaviour
     private readonly CachedText timeText = new CachedText();
     private readonly CachedText healthText = new CachedText();
     private readonly CachedText powerText = new CachedText();
+    private readonly CachedText hintText = new CachedText();
+    private readonly CachedText[] powerUpTexts = { new CachedText(), new CachedText(), new CachedText() };
 
     private PlayerController player;
     private StageManager stage;
@@ -65,9 +67,11 @@ public class GameHud : MonoBehaviour
 
         DrawHealthBar(new Rect(20f, 20f, 260f, 22f));
 
-        if (stageText.Changed(stage.StageIndex, stage.StageCount))
+        if (stageText.Changed(stage.StageIndex, stage.IsEndless ? -1 : stage.StageCount))
         {
-            stageText.Text = "Fase " + (stage.StageIndex + 1) + "/" + stage.StageCount;
+            stageText.Text = stage.IsEndless
+                ? "Onda " + stage.WaveNumber
+                : "Fase " + (stage.StageIndex + 1) + "/" + stage.StageCount;
         }
 
         if (zombiesText.Changed(stage.ZombiesRemaining))
@@ -78,6 +82,7 @@ public class GameHud : MonoBehaviour
         GUI.Label(new Rect(20f, 48f, 400f, 30f), stageText.Text, labelStyle);
         GUI.Label(new Rect(20f, 76f, 400f, 30f), zombiesText.Text, labelStyle);
         GUI.Label(new Rect(20f, 104f, 400f, 30f), PowerLabel(), labelStyle);
+        DrawPowerUps();
 
         if (scoreText.Changed(score.Score))
         {
@@ -102,10 +107,15 @@ public class GameHud : MonoBehaviour
             GUI.Label(new Rect(width - 420f, 76f, 400f, 30f), comboText.Text, rightStyle);
         }
 
-        string hint = "A/D mover  Shift correr  Espaço pular  J soco (aperte de novo para encadear)  K poder  Esc pausa";
+        if (hintText.Changed(KeyBindings.Version))
+        {
+            hintText.Text = BuildHint();
+        }
+
+        string hint = hintText.Text;
         if (stage.State == GameState.Playing && stage.StageCleared)
         {
-            hint = "Fase limpa! Vá até a borda direita da tela.";
+            hint = stage.IsEndless ? "Onda concluída! Prepare-se..." : "Fase limpa! Vá até a borda direita da tela.";
         }
 
         GUI.Label(new Rect(0f, height - 40f, width, 30f), hint, hintStyle);
@@ -130,6 +140,46 @@ public class GameHud : MonoBehaviour
         }
 
         GUI.Label(rect, healthText.Text, hintStyle);
+    }
+
+    private void DrawPowerUps()
+    {
+        float y = 132f;
+        Color previous = GUI.contentColor;
+        for (int i = 0; i < PowerUpState.TypeCount; i++)
+        {
+            PowerUpType type = (PowerUpType)i;
+            if (!player.PowerUps.IsActive(type))
+            {
+                continue;
+            }
+
+            int seconds = Mathf.CeilToInt(player.PowerUps.Remaining(type));
+            if (powerUpTexts[i].Changed(seconds))
+            {
+                powerUpTexts[i].Text = PowerUpState.Label(type) + ": " + seconds + "s";
+            }
+
+            GUI.contentColor = PowerUpState.Tint(type);
+            GUI.Label(new Rect(20f, y, 400f, 30f), powerUpTexts[i].Text, labelStyle);
+            y += 28f;
+        }
+
+        GUI.contentColor = previous;
+    }
+
+    private static string KeyName(BindAction action)
+    {
+        return KeyBindings.DisplayName(KeyBindings.Get(action));
+    }
+
+    private static string BuildHint()
+    {
+        return KeyName(BindAction.Left) + "/" + KeyName(BindAction.Right) + " mover  "
+            + KeyName(BindAction.Sprint) + " correr  "
+            + KeyName(BindAction.Jump) + " pular  "
+            + KeyName(BindAction.Punch) + " soco (aperte de novo para encadear)  "
+            + KeyName(BindAction.Power) + " poder  Esc pausa";
     }
 
     private void DrawBossBar(float width)

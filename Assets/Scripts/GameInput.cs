@@ -16,8 +16,8 @@ public sealed class GameInput : IDisposable
     {
         move = new InputAction("Move", InputActionType.Value);
         move.AddCompositeBinding("1DAxis")
-            .With("Negative", "<Keyboard>/a")
-            .With("Positive", "<Keyboard>/d");
+            .With("Negative", KeyBindings.Get(BindAction.Left))
+            .With("Positive", KeyBindings.Get(BindAction.Right));
         move.AddCompositeBinding("1DAxis")
             .With("Negative", "<Keyboard>/leftArrow")
             .With("Positive", "<Keyboard>/rightArrow");
@@ -26,10 +26,10 @@ public sealed class GameInput : IDisposable
             .With("Negative", "<Gamepad>/dpad/left")
             .With("Positive", "<Gamepad>/dpad/right");
 
-        jump = CreateButton("Jump", "<Keyboard>/space", "<Gamepad>/buttonSouth");
-        punch = CreateButton("Punch", "<Keyboard>/j", "<Gamepad>/buttonWest");
-        power = CreateButton("Power", "<Keyboard>/k", "<Gamepad>/buttonNorth");
-        sprint = CreateButton("Sprint", "<Keyboard>/leftShift", "<Gamepad>/rightTrigger");
+        jump = CreateButton("Jump", KeyBindings.Get(BindAction.Jump), "<Gamepad>/buttonSouth");
+        punch = CreateButton("Punch", KeyBindings.Get(BindAction.Punch), "<Gamepad>/buttonWest");
+        power = CreateButton("Power", KeyBindings.Get(BindAction.Power), "<Gamepad>/buttonNorth");
+        sprint = CreateButton("Sprint", KeyBindings.Get(BindAction.Sprint), "<Gamepad>/rightTrigger");
         restart = CreateButton("Restart", "<Keyboard>/r", "<Gamepad>/select");
         back = CreateButton("Back", "<Keyboard>/escape", "<Gamepad>/start", "<Gamepad>/buttonEast");
 

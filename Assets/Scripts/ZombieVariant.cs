@@ -21,6 +21,7 @@ public sealed class ZombieVariant
     public float ScoreMultiplier = 1f;
     public Color Tint = Color.white;
     public float DropChance = 0.12f;
+    public float PowerUpChance = 0.06f;
     public int HealAmount = 1;
     public bool Charges;
 
@@ -48,6 +49,7 @@ public sealed class ZombieVariant
         StaggerMultiplier = 0.6f,
         ScoreMultiplier = 2.5f,
         DropChance = 0.4f,
+        PowerUpChance = 0.2f,
         HealAmount = 2,
         Tint = new Color(0.8f, 0.7f, 1f, 1f)
     };
@@ -63,6 +65,7 @@ public sealed class ZombieVariant
         StaggerMultiplier = 0.3f,
         ScoreMultiplier = 10f,
         DropChance = 0f,
+        PowerUpChance = 0f,
         Tint = new Color(1f, 0.65f, 0.65f, 1f),
         Charges = true
     };

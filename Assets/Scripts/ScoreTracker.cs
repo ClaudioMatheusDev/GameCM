@@ -19,6 +19,7 @@ public class ScoreTracker : MonoBehaviour
     public float Elapsed { get; private set; }
     public bool NewRecord { get; private set; }
     public int Rank { get; private set; }
+    public int WavesCleared { get; private set; }
     public int HighScore { get; private set; }
 
     public void Configure(StageManager stageManager, PlayerController playerController)
@@ -86,6 +87,14 @@ public class ScoreTracker : MonoBehaviour
 
     private void OnStageCompleted(int stageIndex)
     {
+        // Modo infinito: cada onda vencida da bonus; nao ha estrelas nem fases a liberar.
+        if (stage.IsEndless)
+        {
+            WavesCleared++;
+            Score += DifficultyProfile.Current.ScaleScore(EndlessWaves.WaveBonus(stageIndex));
+            return;
+        }
+
         float par = ScoreCalculator.ParTime(stage.ZombiesTotal) + (stage.IsBossStage ? BossParBonusSeconds : 0f);
         int stars = ScoreCalculator.Stars(stageDamage, stageTimer, par);
         Score += DifficultyProfile.Current.ScaleScore(ScoreCalculator.TimeBonus(stageTimer, par));
@@ -108,7 +117,7 @@ public class ScoreTracker : MonoBehaviour
             Score += DifficultyProfile.Current.ScaleScore(ScoreCalculator.HealthBonus(player.Health.Current));
         }
 
-        Rank = GameProgress.RegisterScore(Score);
+        Rank = GameProgress.RegisterScore(Score, stage.IsEndless ? GameMode.Endless : GameMode.Campaign);
         NewRecord = Rank == 1;
         HighScore = GameProgress.HighScore;
         GameProgress.Save();

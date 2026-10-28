@@ -13,7 +13,8 @@ public enum Sfx
     UiClick,
     UiSelect,
     BossRoar,
-    Pickup
+    Pickup,
+    PowerUp
 }
 
 [Serializable]
@@ -205,6 +206,8 @@ public class SfxPlayer : MonoBehaviour
                 return new Playback(bank.power, 1f, 0.6f, 1.5f);
             case Sfx.Pickup:
                 return new Playback(bank.pickup, 0.8f, 1f, 0.6f);
+            case Sfx.PowerUp:
+                return new Playback(bank.pickup, 0.9f, 1.5f, 0.7f);
             default:
                 return default;
         }

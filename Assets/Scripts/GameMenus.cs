@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.UI;
 
 public enum MenuScreen
@@ -14,6 +16,7 @@ public enum MenuScreen
     Options,
     Credits,
     Ranking,
+    Controls,
     Pause,
     Result
 }
@@ -29,17 +32,6 @@ public class GameMenus : MonoBehaviour
         + "Trilha sonora: criada no BeepBox\n"
         + "Motor: Unity 6";
 
-    private const string HowToPlayText =
-        "A / D ou setas: mover\n"
-        + "Shift: correr\n"
-        + "Espaço: pular (ajuda a desviar dos zumbis)\n"
-        + "J: soco. Aperte J de novo logo após o impacto para fazer um combo de 3 socos\n"
-        + "K: poder (recarga de 2 s)\n"
-        + "Esc ou Start: pausar\n\n"
-        + "Zumbis ficam amarelos um instante antes de atacar: pule ou golpeie primeiro.\n"
-        + "Elimine todos os zumbis e vá até a borda direita para avançar.\n"
-        + "Gamepad: analógico, A pula, X soco, Y poder, gatilho direito corre.";
-
     private const float IntroSeconds = 2f;
     private const float VolumeStep = 0.1f;
 
@@ -52,7 +44,12 @@ public class GameMenus : MonoBehaviour
     private ScoreTracker score;
     private GameHud hud;
     private MenuScreen current = MenuScreen.None;
-    private MenuScreen returnTo = MenuScreen.Main;
+    private readonly Stack<MenuScreen> history = new Stack<MenuScreen>();
+    private readonly List<Button> bindingButtons = new List<Button>();
+    private BindAction? listeningFor;
+    private int captureStartFrame;
+    private Text controlsStatus;
+    private Text howToBody;
 
     private Text volumeLabel;
     private Button fullscreenButton;
@@ -112,6 +109,12 @@ public class GameMenus : MonoBehaviour
             return;
         }
 
+        if (listeningFor.HasValue)
+        {
+            HandleKeyCapture();
+            return;
+        }
+
         if (current == MenuScreen.Result && player.RestartPressed)
         {
             GameSession.Restart(0, false);
@@ -140,7 +143,8 @@ public class GameMenus : MonoBehaviour
             case MenuScreen.Options:
             case MenuScreen.Credits:
             case MenuScreen.Ranking:
-                Open(returnTo);
+            case MenuScreen.Controls:
+                GoBack();
                 break;
         }
     }
@@ -148,6 +152,11 @@ public class GameMenus : MonoBehaviour
     private void Open(MenuScreen screen)
     {
         current = screen;
+        if (screen == MenuScreen.None || screen == MenuScreen.Main || screen == MenuScreen.Pause || screen == MenuScreen.Result)
+        {
+            history.Clear();
+        }
+
         if (HitStop.Instance != null)
         {
             HitStop.Instance.Cancel();
@@ -174,8 +183,13 @@ public class GameMenus : MonoBehaviour
 
     private void OpenSub(MenuScreen screen)
     {
-        returnTo = current;
+        history.Push(current);
         Open(screen);
+    }
+
+    private void GoBack()
+    {
+        Open(history.Count > 0 ? history.Pop() : MenuScreen.Main);
     }
 
     private void SelectFirst(MenuScreen screen)
@@ -191,14 +205,14 @@ public class GameMenus : MonoBehaviour
 
     private void StartGame()
     {
-        if (stage.StageIndex == 0)
+        if (stage.StageIndex == 0 && !stage.IsEndless)
         {
             Open(MenuScreen.None);
             ShowIntro(0);
         }
         else
         {
-            GameSession.Restart(0, false);
+            GameSession.Restart(0, false, GameMode.Campaign);
         }
     }
 
@@ -290,12 +304,22 @@ public class GameMenus : MonoBehaviour
 
         text.AppendLine("Zumbis derrotados: " + score.Kills);
         text.AppendLine("Maior combo: " + score.BestCombo);
-        text.AppendLine("Estrelas: " + score.TotalStars + "/" + (stage.StageCount * ScoreCalculator.MaxStars));
+        if (stage.IsEndless)
+        {
+            text.AppendLine("Ondas completas: " + score.WavesCleared);
+        }
+        else
+        {
+            text.AppendLine("Estrelas: " + score.TotalStars + "/" + (stage.StageCount * ScoreCalculator.MaxStars));
+        }
+
         text.AppendLine("Tempo: " + minutes.ToString("00") + ":" + seconds.ToString("00"));
         text.Append("Dificuldade: " + DifficultyProfile.Current.Label);
         if (state == GameState.GameOver)
         {
-            text.Append("\nFase alcançada: " + (stage.StageIndex + 1) + "/" + stage.StageCount);
+            text.Append(stage.IsEndless
+                ? "\nOnda alcançada: " + stage.WaveNumber
+                : "\nFase alcançada: " + (stage.StageIndex + 1) + "/" + stage.StageCount);
         }
 
         return text.ToString();
@@ -319,6 +343,12 @@ public class GameMenus : MonoBehaviour
 
     private void ShowIntro(int stageIndex)
     {
+        if (stage.IsEndless)
+        {
+            ShowBanner("ONDA " + stage.WaveNumber, stage.IsBossStage ? "Cuidado: chefe a caminho!" : "Sobreviva!");
+            return;
+        }
+
         ShowBanner(
             "FASE " + (stageIndex + 1) + "/" + stage.StageCount,
             stageIndex == stage.StageCount - 1
@@ -353,6 +383,28 @@ public class GameMenus : MonoBehaviour
         introRoot.SetActive(false);
     }
 
+    private static string KeyName(BindAction action)
+    {
+        return KeyBindings.DisplayName(KeyBindings.Get(action));
+    }
+
+    private static string BuildHowToText()
+    {
+        StringBuilder text = new StringBuilder();
+        text.AppendLine(KeyName(BindAction.Left) + " / " + KeyName(BindAction.Right) + " ou setas: mover");
+        text.AppendLine(KeyName(BindAction.Sprint) + ": correr");
+        text.AppendLine(KeyName(BindAction.Jump) + ": pular (ajuda a desviar dos zumbis)");
+        text.AppendLine(KeyName(BindAction.Punch) + ": soco. Aperte de novo logo após o impacto para um combo de 3 socos");
+        text.AppendLine(KeyName(BindAction.Power) + ": poder (recarga de 2 s)");
+        text.AppendLine("Esc ou Start: pausar");
+        text.AppendLine();
+        text.AppendLine("Itens: coração cura; raio = velocidade, seta = força, escudo = invulnerável (8 s).");
+        text.AppendLine("Zumbis ficam amarelos antes de atacar: pule ou golpeie primeiro.");
+        text.AppendLine("Campanha: elimine os zumbis e vá até a borda direita. Infinito: sobreviva às ondas.");
+        text.Append("Gamepad: analógico, A pula, X soco, Y poder, gatilho direito corre.");
+        return text.ToString();
+    }
+
     private void RefreshDynamicTexts()
     {
         volumeLabel.text = "Volume: " + Mathf.RoundToInt(GameProgress.Volume * 100f) + "%";
@@ -379,28 +431,105 @@ public class GameMenus : MonoBehaviour
             UiFactory.SetButtonText(stageButtons[i], label);
         }
 
+        for (int i = 0; i < bindingButtons.Count; i++)
+        {
+            BindAction action = (BindAction)i;
+            UiFactory.SetButtonText(bindingButtons[i], KeyBindings.ActionLabel(action) + ": " + KeyName(action));
+        }
+
+        controlsStatus.text = listeningFor.HasValue
+            ? "Pressione a nova tecla para: " + KeyBindings.ActionLabel(listeningFor.Value) + "  (Esc cancela)"
+            : "Escolha uma ação e pressione a nova tecla. Setas e gamepad continuam valendo.";
+        howToBody.text = BuildHowToText();
         rankingBody.text = BuildRankingText();
+    }
+
+    private static void AppendBoard(StringBuilder text, string title, int[] scores)
+    {
+        text.Append(title).Append('\n');
+        if (scores.Length == 0)
+        {
+            text.Append("  -\n");
+            return;
+        }
+
+        for (int i = 0; i < scores.Length; i++)
+        {
+            text.Append("  ").Append(i + 1).Append("º   ").Append(scores[i]).Append('\n');
+        }
     }
 
     private static string BuildRankingText()
     {
-        int[] scores = GameProgress.TopScores;
-        if (scores.Length == 0)
-        {
-            return "Ainda não há pontuações.\nJogue uma partida!";
-        }
-
         StringBuilder text = new StringBuilder();
-        for (int i = 0; i < scores.Length; i++)
+        AppendBoard(text, "CAMPANHA", GameProgress.TopScoresFor(GameMode.Campaign));
+        AppendBoard(text, "MODO INFINITO", GameProgress.TopScoresFor(GameMode.Endless));
+        return text.ToString().TrimEnd('\n');
+    }
+
+    private void BeginCapture(BindAction action)
+    {
+        listeningFor = action;
+        captureStartFrame = Time.frameCount + 1;
+        if (EventSystem.current != null)
         {
-            text.Append(i + 1).Append("º   ").Append(scores[i]);
-            if (i < scores.Length - 1)
-            {
-                text.Append('\n');
-            }
+            EventSystem.current.sendNavigationEvents = false;
         }
 
-        return text.ToString();
+        RefreshDynamicTexts();
+    }
+
+    private void EndCapture()
+    {
+        listeningFor = null;
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.sendNavigationEvents = true;
+        }
+
+        RefreshDynamicTexts();
+    }
+
+    private void HandleKeyCapture()
+    {
+        // Ignora o quadro em que o botao foi acionado (a tecla de confirmacao nao pode virar a nova tecla).
+        if (Time.frameCount < captureStartFrame)
+        {
+            return;
+        }
+
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null || keyboard.escapeKey.wasPressedThisFrame)
+        {
+            EndCapture();
+            return;
+        }
+
+        foreach (KeyControl key in keyboard.allKeys)
+        {
+            if (!key.wasPressedThisFrame)
+            {
+                continue;
+            }
+
+            string path = "<Keyboard>/" + key.name;
+            if (KeyBindings.IsReserved(path))
+            {
+                continue;
+            }
+
+            KeyBindings.Set(listeningFor.Value, path);
+            player.ReloadInput();
+            EndCapture();
+            return;
+        }
+    }
+
+    private void ResetBindings()
+    {
+        KeyBindings.ResetToDefaults();
+        player.ReloadInput();
+        RefreshDynamicTexts();
     }
 
     private void BuildAll()
@@ -409,8 +538,9 @@ public class GameMenus : MonoBehaviour
 
         BuildMain(canvas.transform);
         BuildStageSelect(canvas.transform);
-        BuildInfoScreen(canvas.transform, MenuScreen.HowToPlay, "COMO JOGAR", HowToPlayText, 340f);
+        BuildHowTo(canvas.transform);
         BuildOptions(canvas.transform);
+        BuildControls(canvas.transform);
         BuildInfoScreen(canvas.transform, MenuScreen.Credits, "CRÉDITOS", Credits, 220f);
         BuildRanking(canvas.transform);
         BuildPause(canvas.transform);
@@ -418,9 +548,9 @@ public class GameMenus : MonoBehaviour
         BuildIntro(canvas.transform);
     }
 
-    private RectTransform CreateScreen(Transform parent, MenuScreen screen, string title)
+    private RectTransform CreateScreen(Transform parent, MenuScreen screen, string title, float spacing = 14f)
     {
-        RectTransform panel = UiFactory.CreatePanel(parent, screen + " Screen", UiFactory.OverlayColor, 14f);
+        RectTransform panel = UiFactory.CreatePanel(parent, screen + " Screen", UiFactory.OverlayColor, spacing);
         panels[screen] = panel.gameObject;
         UiFactory.CreateLabel(panel, title, 56, 80f, UiFactory.TitleColor, FontStyle.Bold);
         return panel;
@@ -439,9 +569,10 @@ public class GameMenus : MonoBehaviour
 
     private void BuildMain(Transform parent)
     {
-        RectTransform panel = CreateScreen(parent, MenuScreen.Main, GameTitle);
+        RectTransform panel = CreateScreen(parent, MenuScreen.Main, GameTitle, 10f);
         UiFactory.CreateLabel(panel, "Beat'em up 2D", 24, 36f, UiFactory.MutedColor);
         AddButton(panel, MenuScreen.Main, "Jogar", StartGame);
+        AddButton(panel, MenuScreen.Main, "Modo infinito", () => GameSession.Restart(0, false, GameMode.Endless));
         AddButton(panel, MenuScreen.Main, "Selecionar fase", () => OpenSub(MenuScreen.StageSelect));
         AddButton(panel, MenuScreen.Main, "Ranking", () => OpenSub(MenuScreen.Ranking));
         AddButton(panel, MenuScreen.Main, "Como jogar", () => OpenSub(MenuScreen.HowToPlay));
@@ -456,26 +587,47 @@ public class GameMenus : MonoBehaviour
         for (int i = 0; i < stage.StageCount; i++)
         {
             int stageIndex = i;
-            Button button = AddButton(panel, MenuScreen.StageSelect, "Fase " + (i + 1), () => GameSession.Restart(stageIndex, false));
+            Button button = AddButton(panel, MenuScreen.StageSelect, "Fase " + (i + 1), () => GameSession.Restart(stageIndex, false, GameMode.Campaign));
             button.GetComponent<LayoutElement>().preferredWidth = 460f;
             stageButtons.Add(button);
         }
 
-        AddButton(panel, MenuScreen.StageSelect, "Voltar", () => Open(returnTo));
+        AddButton(panel, MenuScreen.StageSelect, "Voltar", GoBack);
     }
 
     private void BuildInfoScreen(Transform parent, MenuScreen screen, string title, string body, float bodyHeight)
     {
         RectTransform panel = CreateScreen(parent, screen, title);
         UiFactory.CreateLabel(panel, body, 24, bodyHeight, Color.white);
-        AddButton(panel, screen, "Voltar", () => Open(returnTo));
+        AddButton(panel, screen, "Voltar", GoBack);
+    }
+
+    private void BuildHowTo(Transform parent)
+    {
+        RectTransform panel = CreateScreen(parent, MenuScreen.HowToPlay, "COMO JOGAR");
+        howToBody = UiFactory.CreateLabel(panel, string.Empty, 22, 400f, Color.white);
+        AddButton(panel, MenuScreen.HowToPlay, "Voltar", GoBack);
     }
 
     private void BuildRanking(Transform parent)
     {
         RectTransform panel = CreateScreen(parent, MenuScreen.Ranking, "RANKING");
-        rankingBody = UiFactory.CreateLabel(panel, string.Empty, 30, 230f, Color.white, FontStyle.Bold);
-        AddButton(panel, MenuScreen.Ranking, "Voltar", () => Open(returnTo));
+        rankingBody = UiFactory.CreateLabel(panel, string.Empty, 22, 400f, Color.white, FontStyle.Bold);
+        AddButton(panel, MenuScreen.Ranking, "Voltar", GoBack);
+    }
+
+    private void BuildControls(Transform parent)
+    {
+        RectTransform panel = CreateScreen(parent, MenuScreen.Controls, "CONTROLES", 8f);
+        controlsStatus = UiFactory.CreateLabel(panel, string.Empty, 20, 30f, UiFactory.MutedColor);
+        for (int i = 0; i < KeyBindings.Count; i++)
+        {
+            BindAction action = (BindAction)i;
+            bindingButtons.Add(AddButton(panel, MenuScreen.Controls, KeyBindings.ActionLabel(action), () => BeginCapture(action)));
+        }
+
+        AddButton(panel, MenuScreen.Controls, "Restaurar padrão", ResetBindings);
+        AddButton(panel, MenuScreen.Controls, "Voltar", GoBack);
     }
 
     private void BuildOptions(Transform parent)
@@ -492,18 +644,19 @@ public class GameMenus : MonoBehaviour
         fullscreenButton = UiFactory.CreateButton(panel, "Tela cheia", ToggleFullscreen, 520f);
         effectsButton = UiFactory.CreateButton(panel, "Tremor e pausa nos golpes", ToggleEffects, 520f);
         difficultyButton = UiFactory.CreateButton(panel, "Dificuldade", CycleDifficulty, 520f);
+        UiFactory.CreateButton(panel, "Controles", () => OpenSub(MenuScreen.Controls), 520f);
         UiFactory.CreateLabel(panel, "A dificuldade vale a partir da próxima partida.", 20, 28f, UiFactory.MutedColor);
-        AddButton(panel, MenuScreen.Options, "Voltar", () => Open(returnTo));
+        AddButton(panel, MenuScreen.Options, "Voltar", GoBack);
     }
 
     private void BuildPause(Transform parent)
     {
         RectTransform panel = CreateScreen(parent, MenuScreen.Pause, "PAUSADO");
         AddButton(panel, MenuScreen.Pause, "Continuar", () => Open(MenuScreen.None));
-        AddButton(panel, MenuScreen.Pause, "Reiniciar fase", () => GameSession.Restart(stage.StageIndex, false));
+        AddButton(panel, MenuScreen.Pause, "Reiniciar", () => GameSession.Restart(stage.IsEndless ? 0 : stage.StageIndex, false));
         AddButton(panel, MenuScreen.Pause, "Como jogar", () => OpenSub(MenuScreen.HowToPlay));
         AddButton(panel, MenuScreen.Pause, "Opções", () => OpenSub(MenuScreen.Options));
-        AddButton(panel, MenuScreen.Pause, "Menu principal", () => GameSession.Restart(0, true));
+        AddButton(panel, MenuScreen.Pause, "Menu principal", () => GameSession.Restart(0, true, GameMode.Campaign));
     }
 
     private void BuildResult(Transform parent)
@@ -512,7 +665,7 @@ public class GameMenus : MonoBehaviour
         resultTitle = panel.GetChild(0).GetComponent<Text>();
         resultBody = UiFactory.CreateLabel(panel, string.Empty, 28, 300f, Color.white);
         AddButton(panel, MenuScreen.Result, "Jogar novamente (R)", () => GameSession.Restart(0, false));
-        AddButton(panel, MenuScreen.Result, "Menu principal", () => GameSession.Restart(0, true));
+        AddButton(panel, MenuScreen.Result, "Menu principal", () => GameSession.Restart(0, true, GameMode.Campaign));
     }
 
     private void BuildIntro(Transform parent)

@@ -93,4 +93,15 @@ public class GameProgressTests
         Assert.IsFalse(GameProgress.ScreenEffects);
         Assert.AreEqual(Difficulty.Hard, GameProgress.Difficulty);
     }
+
+    [Test]
+    public void EndlessRankingIsSeparateFromCampaign()
+    {
+        GameProgress.RegisterScore(500, GameMode.Campaign);
+        Assert.AreEqual(1, GameProgress.RegisterScore(300, GameMode.Endless));
+
+        CollectionAssert.AreEqual(new[] { 500 }, GameProgress.TopScoresFor(GameMode.Campaign));
+        CollectionAssert.AreEqual(new[] { 300 }, GameProgress.TopScoresFor(GameMode.Endless));
+        Assert.AreEqual(500, GameProgress.HighScore, "o recorde geral so vem da campanha");
+    }
 }

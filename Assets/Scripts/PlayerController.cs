@@ -31,6 +31,10 @@ public class PlayerTuning
     public int finisherDamageBonus = 1;
     public float finisherKnockbackMultiplier = 1.8f;
     public float finisherRangeMultiplier = 1.2f;
+    public float hasteMultiplier = 1.4f;
+    public int strengthDamageMultiplier = 2;
+    public float powerUpDuration = 8f;
+    public float startOffset = 1f;
 }
 
 [RequireComponent(typeof(Animator), typeof(SpriteRenderer), typeof(Health))]
@@ -71,6 +75,7 @@ public class PlayerController : MonoBehaviour
     public Health Health => health;
     public bool IsDead => health != null && health.IsDead;
     public bool InputLocked { get; set; }
+    public PowerUpState PowerUps { get; } = new PowerUpState();
     private Vector3 FeetPosition => new Vector3(transform.position.x, spriteRenderer.bounds.min.y, transform.position.z);
     public float PowerCooldownRemaining => powerCooldownTimer;
     public bool RestartPressed => input != null && input.RestartPressed;
@@ -97,7 +102,18 @@ public class PlayerController : MonoBehaviour
     /// <summary>Recebe dano de um inimigo em sourceX. Retorna true se o dano foi aplicado.</summary>
     public bool ReceiveHit(int damage, float sourceX)
     {
-        if (!configured || IsDead || !health.TakeDamage(damage))
+        if (!configured || IsDead)
+        {
+            return false;
+        }
+
+        if (PowerUps.IsActive(PowerUpType.Shield))
+        {
+            ParticleFx.Sparkle(spriteRenderer.bounds.center);
+            return false;
+        }
+
+        if (!health.TakeDamage(damage))
         {
             return false;
         }
@@ -122,7 +138,7 @@ public class PlayerController : MonoBehaviour
     public void ResetToStageStart()
     {
         Vector3 position = transform.position;
-        position.x = settings.stageStartX;
+        position.x = settings.stageStartX + settings.startOffset;
         position.y = groundY;
         transform.position = position;
     }
@@ -150,6 +166,7 @@ public class PlayerController : MonoBehaviour
 
         if (IsDead)
         {
+            PowerUps.Clear();
             UpdateJump(ref position, deltaTime);
             transform.position = position;
             spriteRenderer.color = Color.white;
@@ -157,6 +174,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
+        PowerUps.Tick(deltaTime);
         powerCooldownTimer = Mathf.Max(0f, powerCooldownTimer - deltaTime);
         hurtTimer = Mathf.Max(0f, hurtTimer - deltaTime);
         if (attackTimer <= 0f)
@@ -178,7 +196,8 @@ public class PlayerController : MonoBehaviour
         }
 
         bool attacking = attackTimer > 0f;
-        float speed = settings.horizontalSpeed * (sprinting ? settings.sprintMultiplier : 1f);
+        float speed = settings.horizontalSpeed * (sprinting ? settings.sprintMultiplier : 1f)
+            * (PowerUps.IsActive(PowerUpType.Haste) ? settings.hasteMultiplier : 1f);
         if (attacking)
         {
             speed *= settings.attackMoveFactor;
@@ -362,6 +381,10 @@ public class PlayerController : MonoBehaviour
         float knockback = attackIsPower
             ? settings.powerKnockback
             : settings.punchKnockback * (finisher ? settings.finisherKnockbackMultiplier : 1f);
+        if (PowerUps.IsActive(PowerUpType.Strength))
+        {
+            damage *= settings.strengthDamageMultiplier;
+        }
 
         Bounds body = spriteRenderer.bounds;
         Vector2 center = new Vector2(transform.position.x + facing * range * 0.5f, body.center.y);
@@ -397,9 +420,43 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void ActivatePowerUp(PowerUpType type)
+    {
+        PowerUps.Activate(type, settings.powerUpDuration);
+        SfxPlayer.Play(Sfx.PowerUp);
+        ParticleFx.PowerUpBurst(spriteRenderer.bounds.center, PowerUpState.Tint(type));
+    }
+
+    /// <summary>Recria a entrada para aplicar teclas remapeadas.</summary>
+    public void ReloadInput()
+    {
+        input?.Dispose();
+        input = new GameInput();
+    }
+
+    private Color PowerUpTint()
+    {
+        if (PowerUps.IsActive(PowerUpType.Shield))
+        {
+            return Color.Lerp(Color.white, PowerUpState.Tint(PowerUpType.Shield), 0.5f);
+        }
+
+        if (PowerUps.IsActive(PowerUpType.Strength))
+        {
+            return Color.Lerp(Color.white, PowerUpState.Tint(PowerUpType.Strength), 0.5f);
+        }
+
+        if (PowerUps.IsActive(PowerUpType.Haste))
+        {
+            return Color.Lerp(Color.white, PowerUpState.Tint(PowerUpType.Haste), 0.5f);
+        }
+
+        return Color.white;
+    }
+
     private void UpdateBlink()
     {
-        Color color = Color.white;
+        Color color = PowerUpTint();
         if (health.IsInvulnerable && Mathf.Repeat(Time.time, BlinkPeriod) < BlinkPeriod * 0.5f)
         {
             color.a = 0.35f;

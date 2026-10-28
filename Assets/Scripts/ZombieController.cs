@@ -62,6 +62,7 @@ public class ZombieController : MonoBehaviour
     private float chargeDustTimer;
     private float attackWindupTimer;
     private float minX;
+    private float moveSpeedScale = 1f;
     private float maxX;
 
     public event Action<ZombieController> Died;
@@ -75,7 +76,7 @@ public class ZombieController : MonoBehaviour
 
     private float StopDistance => settings.stopDistance * variant.ScaleMultiplier;
     private float AttackRange => settings.attackRange * variant.ScaleMultiplier;
-    private float MoveSpeed => settings.moveSpeed * variant.SpeedMultiplier * DifficultyProfile.Current.ZombieSpeed;
+    private float MoveSpeed => settings.moveSpeed * variant.SpeedMultiplier * DifficultyProfile.Current.ZombieSpeed * moveSpeedScale;
     private bool IsWindingUp => attackWindupTimer > 0f;
 
     private void Awake()
@@ -102,7 +103,9 @@ public class ZombieController : MonoBehaviour
         Vector3 position,
         float scale,
         float stageMinX,
-        float stageMaxX)
+        float stageMaxX,
+        float healthScale = 1f,
+        float speedScale = 1f)
     {
         frames = zombieFrames;
         settings = zombieSettings;
@@ -110,6 +113,7 @@ public class ZombieController : MonoBehaviour
         player = target;
         minX = stageMinX;
         maxX = stageMaxX;
+        moveSpeedScale = speedScale;
 
         transform.position = position;
         transform.localScale = Vector3.one * scale * variant.ScaleMultiplier;
@@ -121,7 +125,7 @@ public class ZombieController : MonoBehaviour
         hitBox.offset = bounds.center;
         hitBox.enabled = true;
 
-        health.Initialize(Mathf.Max(1, Mathf.RoundToInt(settings.health * variant.HealthMultiplier)), 0f);
+        health.Initialize(Mathf.Max(1, Mathf.RoundToInt(settings.health * variant.HealthMultiplier * healthScale)), 0f);
         attackTimer = 0f;
         chargeTimer = variant.Charges ? settings.chargeCooldown * 0.5f : 0f;
         knockbackVelocity = 0f;
