@@ -13,6 +13,7 @@ public static class GameProgress
     private static string VolumeKey => KeyPrefix + "Volume";
     private static string FullscreenKey => KeyPrefix + "Fullscreen";
     private static string EffectsKey => KeyPrefix + "ScreenEffects";
+    private static string VSyncKey => KeyPrefix + "VSync";
     private static string DifficultyKey => KeyPrefix + "Difficulty";
     private static string TopScoresKey => KeyPrefix + "TopScores";
     private static string StarsKey(int stageIndex) => KeyPrefix + "Stars." + stageIndex;
@@ -24,6 +25,13 @@ public static class GameProgress
     {
         get => PlayerPrefs.GetInt(EffectsKey, 1) == 1;
         set => PlayerPrefs.SetInt(EffectsKey, value ? 1 : 0);
+    }
+
+    /// <summary>Sincronia vertical (liga por padrao: evita quadros irregulares e uso desnecessario da GPU).</summary>
+    public static bool VSync
+    {
+        get => PlayerPrefs.GetInt(VSyncKey, 1) == 1;
+        set => PlayerPrefs.SetInt(VSyncKey, value ? 1 : 0);
     }
 
     public static Difficulty Difficulty
@@ -131,6 +139,7 @@ public static class GameProgress
         PlayerPrefs.DeleteKey(VolumeKey);
         PlayerPrefs.DeleteKey(FullscreenKey);
         PlayerPrefs.DeleteKey(EffectsKey);
+        PlayerPrefs.DeleteKey(VSyncKey);
         PlayerPrefs.DeleteKey(DifficultyKey);
         PlayerPrefs.DeleteKey(TopScoresKey);
         PlayerPrefs.DeleteKey(TopScoresKey + ".Endless");

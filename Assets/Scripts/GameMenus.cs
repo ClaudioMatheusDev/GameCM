@@ -54,6 +54,7 @@ public class GameMenus : MonoBehaviour
     private Text volumeLabel;
     private Button fullscreenButton;
     private Button effectsButton;
+    private Button vsyncButton;
     private Button difficultyButton;
     private Text rankingBody;
     private Text resultTitle;
@@ -228,6 +229,7 @@ public class GameMenus : MonoBehaviour
     private void ApplySavedSettings()
     {
         AudioListener.volume = GameProgress.Volume;
+        ApplyVsync();
         if (GameProgress.HasFullscreenPreference)
         {
             Screen.fullScreen = GameProgress.Fullscreen;
@@ -248,6 +250,21 @@ public class GameMenus : MonoBehaviour
         Screen.fullScreen = !Screen.fullScreen;
         GameProgress.Fullscreen = Screen.fullScreen;
         GameProgress.Save();
+        RefreshDynamicTexts();
+    }
+
+    private static void ApplyVsync()
+    {
+        bool on = GameProgress.VSync;
+        QualitySettings.vSyncCount = on ? 1 : 0;
+        Application.targetFrameRate = on ? -1 : 144;
+    }
+
+    private void ToggleVsync()
+    {
+        GameProgress.VSync = !GameProgress.VSync;
+        GameProgress.Save();
+        ApplyVsync();
         RefreshDynamicTexts();
     }
 
@@ -410,6 +427,7 @@ public class GameMenus : MonoBehaviour
         volumeLabel.text = "Volume: " + Mathf.RoundToInt(GameProgress.Volume * 100f) + "%";
         UiFactory.SetButtonText(fullscreenButton, "Tela cheia: " + (Screen.fullScreen ? "Sim" : "Não"));
         UiFactory.SetButtonText(effectsButton, "Tremor e pausa nos golpes: " + (GameProgress.ScreenEffects ? "Sim" : "Não"));
+        UiFactory.SetButtonText(vsyncButton, "VSync: " + (GameProgress.VSync ? "Sim" : "Não"));
         UiFactory.SetButtonText(difficultyButton, "Dificuldade: " + DifficultyProfile.Get(GameProgress.Difficulty).Label);
 
         int unlocked = GameProgress.UnlockedStage;
@@ -643,6 +661,7 @@ public class GameMenus : MonoBehaviour
 
         fullscreenButton = UiFactory.CreateButton(panel, "Tela cheia", ToggleFullscreen, 520f);
         effectsButton = UiFactory.CreateButton(panel, "Tremor e pausa nos golpes", ToggleEffects, 520f);
+        vsyncButton = UiFactory.CreateButton(panel, "VSync", ToggleVsync, 520f);
         difficultyButton = UiFactory.CreateButton(panel, "Dificuldade", CycleDifficulty, 520f);
         UiFactory.CreateButton(panel, "Controles", () => OpenSub(MenuScreen.Controls), 520f);
         UiFactory.CreateLabel(panel, "A dificuldade vale a partir da próxima partida.", 20, 28f, UiFactory.MutedColor);

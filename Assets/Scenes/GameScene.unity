@@ -333,10 +333,10 @@ MonoBehaviour:
   themeSource: {fileID: 1307814068}
   stageBackground: {fileID: 3000000001}
   stageBackgrounds:
-  - {fileID: 7270078059568837946, guid: 28b37f235b1be184ba76f735db72e635, type: 3}
-  - {fileID: -8326133134483607215, guid: 8fdd9cf0e654572428537e3af954ff01, type: 3}
-  - {fileID: 1387363957364076914, guid: 297b7f544d1464b48ae532d878c2b9e2, type: 3}
-  - {fileID: -443023582339287750, guid: b38d3b17479940b47a0f84c8547fa73a, type: 3}
+  - {fileID: 21300000, guid: d7f12379c0cd48b68d240b7b876e3e98, type: 3}
+  - {fileID: 21300000, guid: fed5262dd8074afa81d4dc76d0d3377f, type: 3}
+  - {fileID: 21300000, guid: f3649bd944bd4609bac1a8646814a990, type: 3}
+  - {fileID: 21300000, guid: b365c82ee3bb4297abc4ecec2ca2c011, type: 3}
   zombieWalkFrames:
   - {fileID: -855298285791758126, guid: a7d0dc88617cf4646beebc0810c74686, type: 3}
   - {fileID: 6937817954938267909, guid: 6fed31bbca29e8d4497ef060fc1419d7, type: 3}
@@ -642,7 +642,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -100
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7270078059568837946, guid: 28b37f235b1be184ba76f735db72e635, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d7f12379c0cd48b68d240b7b876e3e98, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

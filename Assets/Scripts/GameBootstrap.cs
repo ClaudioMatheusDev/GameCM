@@ -37,6 +37,7 @@ public class GameBootstrap : MonoBehaviour
 
         GetOrAdd<SfxPlayer>().Configure(sounds);
         GetOrAdd<HitStop>();
+        GetOrAdd<PerformanceOverlay>();
         if (ParticleFx.Instance == null)
         {
             new GameObject("Particle Effects").AddComponent<ParticleFx>();

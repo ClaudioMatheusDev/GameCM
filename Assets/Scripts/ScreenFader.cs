@@ -23,6 +23,7 @@ public class ScreenFader : MonoBehaviour
         image = fade.GetComponent<Image>();
         image.color = new Color(0f, 0f, 0f, 0f);
         image.raycastTarget = false;
+        image.enabled = false;
     }
 
     private void OnDestroy()
@@ -54,5 +55,7 @@ public class ScreenFader : MonoBehaviour
         Color color = image.color;
         color.a = alpha;
         image.color = color;
+        // Transparente nao desenha nada: evita um quadro de tela cheia a cada frame.
+        image.enabled = alpha > 0.001f;
     }
 }
