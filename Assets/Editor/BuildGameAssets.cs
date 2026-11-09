@@ -24,15 +24,15 @@ public static class BuildGameAssets
     private const string ZombieDeathRoot = ZombieRoot + "/Death";
     private const string ScenePath = SceneRoot + "/GameScene.unity";
     private const float FrameWorldSize = 12.5f;
-    private const float BackgroundPixelsPerUnit = 50f;
+    private const float BackgroundPixelsPerUnit = 16f;
     private const float ZombiePixelsPerUnit = 100f;
     private const int SpriteSheetCellSize = 256;
     private static readonly string[] BackgroundPaths =
     {
-        BackgroundRoot + "/Stage1.jpg",
-        BackgroundRoot + "/Stage2.jpg",
-        BackgroundRoot + "/Stage3.jpg",
-        BackgroundRoot + "/Stage4.jpg"
+        BackgroundRoot + "/Stage1.png",
+        BackgroundRoot + "/Stage2.png",
+        BackgroundRoot + "/Stage3.png",
+        BackgroundRoot + "/Stage4.png"
     };
 
     private static readonly MoveSet[] Moves =
@@ -162,13 +162,13 @@ public static class BuildGameAssets
             }
 
             bool changed = importer.textureType != TextureImporterType.Sprite
-                || importer.spriteImportMode != SpriteImportMode.Multiple
+                || importer.spriteImportMode != SpriteImportMode.Single
                 || !Mathf.Approximately(importer.spritePixelsPerUnit, BackgroundPixelsPerUnit)
                 || importer.filterMode != FilterMode.Point
                 || importer.textureCompression != TextureImporterCompression.Uncompressed;
 
             importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Multiple;
+            importer.spriteImportMode = SpriteImportMode.Single;
             importer.spritePixelsPerUnit = BackgroundPixelsPerUnit;
             importer.filterMode = FilterMode.Point;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
