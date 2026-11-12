@@ -68,7 +68,7 @@ public class PowerUpPickup : MonoBehaviour
 
         Vector3 playerPosition = player.transform.position;
         bool close = Mathf.Abs(playerPosition.x - position.x) <= CollectRangeX
-            && Mathf.Abs(playerPosition.y - baseY) <= CollectRangeY;
+            && Mathf.Abs(player.AirHeight) <= CollectRangeY;
         if (close)
         {
             player.ActivatePowerUp(type);

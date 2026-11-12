@@ -78,6 +78,9 @@ public class PlayerController : MonoBehaviour
     public PowerUpState PowerUps { get; } = new PowerUpState();
     private Vector3 FeetPosition => new Vector3(transform.position.x, spriteRenderer.bounds.min.y, transform.position.z);
     public float PowerCooldownRemaining => powerCooldownTimer;
+
+    /// <summary>Altura do jogador acima do chao (0 em solo, sobe durante o pulo).</summary>
+    public float AirHeight => transform.position.y - groundY;
     public bool RestartPressed => input != null && input.RestartPressed;
     public bool BackPressed => input != null && input.BackPressed;
 

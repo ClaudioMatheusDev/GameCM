@@ -68,7 +68,7 @@ public class HealthPickup : MonoBehaviour
 
         Vector3 playerPosition = player.transform.position;
         bool close = Mathf.Abs(playerPosition.x - position.x) <= CollectRangeX
-            && Mathf.Abs(playerPosition.y - baseY) <= CollectRangeY;
+            && Mathf.Abs(player.AirHeight) <= CollectRangeY;
 
         // Com a vida cheia o item fica no chao esperando.
         if (close && player.Health.Heal(healAmount))

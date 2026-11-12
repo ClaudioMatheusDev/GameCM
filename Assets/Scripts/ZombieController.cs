@@ -264,7 +264,7 @@ public class ZombieController : MonoBehaviour
         attackTimer -= deltaTime;
         Vector3 position = transform.position;
         float dx = player.transform.position.x - position.x;
-        float dy = player.transform.position.y - position.y;
+        float dy = player.AirHeight;
         bool inRange = Mathf.Abs(dx) <= AttackRange && Mathf.Abs(dy) <= settings.attackHeight;
         int damage = Mathf.Max(1, Mathf.RoundToInt(settings.contactDamage * variant.DamageMultiplier));
 
