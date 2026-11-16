@@ -18,6 +18,7 @@ public static class BuildGameAssets
     private const string SfxRoot = AudioRoot + "/Sons";
     private const string SceneRoot = "Assets/Scenes";
     private const string BackgroundRoot = "Assets/Backgrounds";
+    private const string EndingImagePath = BackgroundRoot + "/Ending.png";
     private const string ZombieRoot = "Assets/Zombie";
     private const string ZombieWalkRoot = ZombieRoot + "/walk_left";
     private const string ZombieHurtRoot = ZombieRoot + "/hurt/up";
@@ -32,7 +33,9 @@ public static class BuildGameAssets
         BackgroundRoot + "/Stage1.png",
         BackgroundRoot + "/Stage2.png",
         BackgroundRoot + "/Stage3.png",
-        BackgroundRoot + "/Stage4.png"
+        BackgroundRoot + "/Stage4.png",
+        BackgroundRoot + "/Stage5.png",
+        BackgroundRoot + "/Stage6.png"
     };
 
     private static readonly MoveSet[] Moves =
@@ -67,7 +70,8 @@ public static class BuildGameAssets
         Sprite[] zombieWalk = LoadZombieFrames(ZombieWalkRoot);
         Sprite[] zombieHurt = LoadZombieFrames(ZombieHurtRoot);
         Sprite[] zombieDeath = LoadZombieFrames(ZombieDeathRoot);
-        CreateGameScene(controller, theme, backgrounds, zombieWalk, zombieHurt, zombieDeath, LoadSoundBank());
+        Sprite ending = AssetDatabase.LoadAllAssetsAtPath(EndingImagePath).OfType<Sprite>().FirstOrDefault();
+        CreateGameScene(controller, theme, backgrounds, ending, zombieWalk, zombieHurt, zombieDeath, LoadSoundBank());
         RegisterSceneInBuildSettings();
 
         AssetDatabase.SaveAssets();
@@ -144,7 +148,7 @@ public static class BuildGameAssets
         {
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Multiple;
-            importer.spritePixelsPerUnit = PixelsPerUnit;
+            importer.spritePixelsPerUnit = SpriteSheetCellSize / FrameWorldSize;
             importer.filterMode = FilterMode.Point;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.SaveAndReimport();
@@ -153,7 +157,7 @@ public static class BuildGameAssets
 
     private static void ConfigureBackgroundSprites()
     {
-        foreach (string path in BackgroundPaths)
+        foreach (string path in BackgroundPaths.Append(EndingImagePath))
         {
             TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
             if (importer == null)
@@ -387,6 +391,7 @@ public static class BuildGameAssets
         AnimatorController controller,
         AudioClip theme,
         Sprite[] backgrounds,
+        Sprite ending,
         Sprite[] zombieWalk,
         Sprite[] zombieHurt,
         Sprite[] zombieDeath,
@@ -443,6 +448,7 @@ public static class BuildGameAssets
         AssignSprites(serializedDemo.FindProperty("zombieHurtFrames"), zombieHurt);
         AssignSprites(serializedDemo.FindProperty("zombieDeathFrames"), zombieDeath);
         serializedDemo.FindProperty("stageSettings.zombieHeightRatio").floatValue = 0.5f;
+        serializedDemo.FindProperty("endingImage").objectReferenceValue = ending;
         for (int i = 0; i < SoundFields.Length; i++)
         {
             serializedDemo.FindProperty("sounds." + SoundFields[i]).objectReferenceValue = sounds[i];

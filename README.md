@@ -1,6 +1,8 @@
 # GameCM
 
-Beat'em up 2D lateral feito na Unity 6 (6000.4.8f1) com URP e Input System. O personagem atravessa 4 fases e enfrenta zumbis que surgem a cada fase.
+Beat'em up 2D lateral feito na Unity 6 (6000.4.8f1) com URP e Input System. O personagem atravessa 6 fases (rua, cemiterio, hospital, laboratorio, metro e telhado) ate o helicoptero de resgate, enfrentando zumbis em cada uma.
+
+**Historia:** ao escolher *Jogar*, uma abertura de 4 quadros conta como o surto comecou. Ao vencer a campanha, o final mostra a fuga de helicoptero e os creditos sobem antes do resultado. Enter/Espaco/clique avancam o texto e Esc/Start pulam a cena.
 
 ## Como jogar
 
@@ -16,13 +18,13 @@ Abra o projeto na Unity, abra `Assets/Scenes/GameScene.unity` e aperte Play.
 | Pausar / voltar | Esc | Start ou botao leste (B) |
 | Reiniciar (tela de resultado) | R | Select |
 
-**Inimigos:** zumbis normais, rapidos (fase 2 em diante), resistentes (fase 3 em diante, causam 2 de dano) e, na fase 4, um **chefe** com barra de vida que faz investidas (o corpo fica vermelho antes de avancar). Zumbis mais fortes valem mais pontos.
+**Inimigos:** zumbis normais, rapidos (fase 2 em diante), resistentes (fase 3 em diante, causam 2 de dano) e, na ultima fase (telhado), um **chefe** com barra de vida que faz investidas (o corpo fica vermelho antes de avancar). Zumbis mais fortes valem mais pontos.
 
 **Combate:** aperte J de novo logo apos o impacto do soco para encadear um combo de 3 socos; o terceiro e um finalizador (mais dano, alcance e empurrao). Todo zumbi fica amarelo por um instante antes de atacar, dando tempo de pular ou golpear primeiro.
 
 **Dificuldade (Opcoes):** Facil (mais vida, zumbis mais lentos e em menor numero), Normal e Dificil (menos vida, zumbis mais rapidos e numerosos). Vale a partir da proxima partida e altera a pontuacao.
 
-**Modos:** *Campanha* (4 fases, chefe na ultima) e *Modo infinito* (ondas sem fim, cada vez maiores; chefe a cada 5 ondas, zumbis mais fortes com o tempo e bonus por onda vencida). Os dois tem ranking proprio.
+**Modos:** *Campanha* (6 fases, chefe na ultima) e *Modo infinito* (ondas sem fim, cada vez maiores; chefe a cada 5 ondas, zumbis mais fortes com o tempo e bonus por onda vencida). Os dois tem ranking proprio.
 
 **Camera:** o cenario e largo e a camera segue o jogador; os zumbis entram pelas bordas da tela. O fundo se repete espelhado, sem emendas.
 
@@ -34,7 +36,7 @@ Abra o projeto na Unity, abra `Assets/Scenes/GameScene.unity` e aperte Play.
 
 **Itens de cura:** zumbis podem soltar um coracao (mais chance nos resistentes e quando voce esta com pouca vida). Encoste para recuperar vida; com a vida cheia o item espera no chao e some depois de alguns segundos.
 
-**Objetivo:** elimine todos os zumbis da fase e va ate a borda direita da tela para avancar. Venca a fase 4 para ganhar. Voce tem 5 pontos de vida; zumbis causam dano ao encostar (pular ajuda a desviar) e voce fica invulneravel por um instante depois de ser atingido.
+**Objetivo:** elimine todos os zumbis da fase e va ate a borda direita da tela para avancar. Venca a ultima fase para ganhar. Voce tem 5 pontos de vida; zumbis causam dano ao encostar (pular ajuda a desviar) e voce fica invulneravel por um instante depois de ser atingido.
 
 ## Telas
 
@@ -55,7 +57,7 @@ Todas sao criadas em codigo (uGUI) por `GameMenus`, sem prefabs: **menu principa
 | `Assets/Tests/EditMode` | Testes de edicao (Test Runner da Unity) |
 | `Assets/Sprites` | Frames do personagem por animacao |
 | `Assets/Zombie` | Frames do zumbi (`walk_left`, `hurt/up`, `Death`) |
-| `Assets/Backgrounds` | Fundos `Stage1` a `Stage4` |
+| `Assets/Backgrounds` | Fundos `Stage1` a `Stage6` e `Ending` (imagem do final), PNG 292x164 em pixel art |
 | `Assets/Game/Audio` | Musica (`AudioBackground.mp3`) e efeitos em `Sons/` |
 
 ### Scripts

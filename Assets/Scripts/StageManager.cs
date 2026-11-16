@@ -58,6 +58,7 @@ public class StageManager : MonoBehaviour
     private float startX;
     private float endX;
     private float groundY;
+    private float groundFeetY;
     private float zombieScale;
     private bool configured;
 
@@ -126,7 +127,8 @@ public class StageManager : MonoBehaviour
         groundY = player.transform.position.y;
 
         SpriteRenderer playerRenderer = player.GetComponent<SpriteRenderer>();
-        zombieScale = frames.Walk != null && frames.Walk.Length > 0
+        groundFeetY = playerRenderer.bounds.min.y;
+        zombieScale =frames.Walk != null && frames.Walk.Length > 0
             ? playerRenderer.bounds.size.y * settings.zombieHeightRatio / frames.Walk[0].bounds.size.y
             : 1f;
 
@@ -314,6 +316,7 @@ public class StageManager : MonoBehaviour
             endX,
             healthScale,
             speedScale);
+        AlignFeetToGround(zombie);
         active.Add(zombie);
 
         if (isBoss)
@@ -323,6 +326,15 @@ public class StageManager : MonoBehaviour
             ImpactFx.Play(Fx.BossCharge);
             BossAppeared?.Invoke();
         }
+    }
+
+    /// <summary>Os pivos dos sprites diferem; alinha os pes do zumbi aos do jogador para nao parecerem em alturas diferentes.</summary>
+    private void AlignFeetToGround(ZombieController zombie)
+    {
+        Bounds bounds = zombie.GetComponent<SpriteRenderer>().bounds;
+        Vector3 position = zombie.transform.position;
+        position.y += groundFeetY - bounds.min.y;
+        zombie.transform.position = position;
     }
 
     private ZombieController CreateZombie()
