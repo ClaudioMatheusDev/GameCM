@@ -10,6 +10,7 @@ public class GameBootstrap : MonoBehaviour
     [SerializeField] private AudioSource themeSource = null;
     [SerializeField] private SpriteRenderer stageBackground = null;
     [SerializeField] private Sprite[] stageBackgrounds = null;
+    [SerializeField] private Sprite endingImage = null;
     [SerializeField] private Sprite[] zombieWalkFrames = null;
     [SerializeField] private Sprite[] zombieHurtFrames = null;
     [SerializeField] private Sprite[] zombieDeathFrames = null;
@@ -99,7 +100,9 @@ public class GameBootstrap : MonoBehaviour
         GameHud hud = GetOrAdd<GameHud>();
         hud.Configure(player, stage, score);
 
-        GetOrAdd<GameMenus>().Configure(player, stage, score, hud);
+        GameMenus menus = GetOrAdd<GameMenus>();
+        menus.ConfigureStory(stageBackgrounds, endingImage);
+        menus.Configure(player, stage, score, hud);
 
         if (themeSource != null && themeSource.clip != null)
         {

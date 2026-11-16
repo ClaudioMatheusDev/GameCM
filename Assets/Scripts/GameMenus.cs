@@ -17,6 +17,7 @@ public enum MenuScreen
     Credits,
     Ranking,
     Controls,
+    Cutscene,
     Pause,
     Result
 }
@@ -31,6 +32,8 @@ public class GameMenus : MonoBehaviour
         + "Arte: pixel art (frames do Pixilart)\n"
         + "Trilha sonora: criada no BeepBox\n"
         + "Motor: Unity 6";
+
+    private const string EndingCredits = "OBRIGADO POR JOGAR!\n\n" + Credits;
 
     private const float IntroSeconds = 2f;
     private const float VolumeStep = 0.1f;
@@ -50,6 +53,9 @@ public class GameMenus : MonoBehaviour
     private int captureStartFrame;
     private Text controlsStatus;
     private Text howToBody;
+    private CutscenePlayer cutscene;
+    private Sprite[] storyBackgrounds;
+    private Sprite endingImage;
 
     private Text volumeLabel;
     private Button fullscreenButton;
@@ -66,6 +72,13 @@ public class GameMenus : MonoBehaviour
 
     public MenuScreen Current => current;
 
+    /// <summary>Imagens usadas nas cutscenes: fundos das fases e a imagem do final.</summary>
+    public void ConfigureStory(Sprite[] backgrounds, Sprite ending)
+    {
+        storyBackgrounds = backgrounds;
+        endingImage = ending;
+    }
+
     public void Configure(PlayerController playerController, StageManager stageManager, ScoreTracker scoreTracker, GameHud gameHud)
     {
         player = playerController;
@@ -74,6 +87,12 @@ public class GameMenus : MonoBehaviour
         hud = gameHud;
 
         ApplySavedSettings();
+        cutscene = GetComponent<CutscenePlayer>();
+        if (cutscene == null)
+        {
+            cutscene = gameObject.AddComponent<CutscenePlayer>();
+        }
+
         UiFactory.EnsureEventSystem();
         BuildAll();
 
@@ -106,6 +125,12 @@ public class GameMenus : MonoBehaviour
     private void Update()
     {
         if (player == null)
+        {
+            return;
+        }
+
+        // A cutscene cuida da propria entrada (avancar/pular).
+        if (current == MenuScreen.Cutscene)
         {
             return;
         }
@@ -208,13 +233,27 @@ public class GameMenus : MonoBehaviour
     {
         if (stage.StageIndex == 0 && !stage.IsEndless)
         {
-            Open(MenuScreen.None);
-            ShowIntro(0);
+            PlayCutscene(Story.Intro(storyBackgrounds), null, () =>
+            {
+                Open(MenuScreen.None);
+                ShowIntro(0);
+            });
         }
         else
         {
             GameSession.Restart(0, false, GameMode.Campaign);
         }
+    }
+
+    private void PlayCutscene(List<CutsceneSlide> slides, string creditsText, System.Action onFinished)
+    {
+        Open(MenuScreen.Cutscene);
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+        }
+
+        cutscene.Play(slides, creditsText, onFinished);
     }
 
     private void QuitGame()
@@ -294,6 +333,15 @@ public class GameMenus : MonoBehaviour
     private IEnumerator ShowResultAfterDelay(GameState state)
     {
         yield return new WaitForSeconds(state == GameState.Victory ? 0.8f : 1.5f);
+
+        // Vitoria na campanha: final com creditos antes da tela de resultado.
+        if (state == GameState.Victory && !stage.IsEndless)
+        {
+            bool finished = false;
+            PlayCutscene(Story.Ending(endingImage), EndingCredits, () => finished = true);
+            yield return new WaitUntil(() => finished);
+        }
+
         resultTitle.text = state == GameState.Victory ? "VITÓRIA!" : "VOCÊ MORREU";
         resultBody.text = BuildResultText(state);
         Open(MenuScreen.Result);
@@ -368,9 +416,16 @@ public class GameMenus : MonoBehaviour
 
         ShowBanner(
             "FASE " + (stageIndex + 1) + "/" + stage.StageCount,
-            stageIndex == stage.StageCount - 1
-                ? "Última fase! Derrote todos os zumbis e o chefe."
-                : "Elimine todos os zumbis e siga para a direita.");
+            StageSubtitle(stageIndex));
+    }
+
+    private string StageSubtitle(int stageIndex)
+    {
+        string goal = stageIndex == stage.StageCount - 1
+            ? "Última fase! Derrote todos os zumbis e o chefe."
+            : "Elimine todos os zumbis e siga para a direita.";
+        string name = Story.StageName(stageIndex);
+        return name.Length > 0 ? name + ": " + goal : goal;
     }
 
     private void ShowBanner(string title, string subtitle)
@@ -436,7 +491,8 @@ public class GameMenus : MonoBehaviour
             bool isUnlocked = i <= unlocked;
             stageButtons[i].interactable = isUnlocked;
 
-            string label = "Fase " + (i + 1);
+            string name = Story.StageName(i);
+            string label = "Fase " + (i + 1) + (name.Length > 0 ? " - " + name : string.Empty);
             if (!isUnlocked)
             {
                 label += " (bloqueada)";
@@ -606,7 +662,7 @@ public class GameMenus : MonoBehaviour
         {
             int stageIndex = i;
             Button button = AddButton(panel, MenuScreen.StageSelect, "Fase " + (i + 1), () => GameSession.Restart(stageIndex, false, GameMode.Campaign));
-            button.GetComponent<LayoutElement>().preferredWidth = 460f;
+            button.GetComponent<LayoutElement>().preferredWidth = 560f;
             stageButtons.Add(button);
         }
 

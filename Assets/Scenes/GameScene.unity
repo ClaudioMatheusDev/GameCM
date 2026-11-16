@@ -337,6 +337,9 @@ MonoBehaviour:
   - {fileID: 21300000, guid: fed5262dd8074afa81d4dc76d0d3377f, type: 3}
   - {fileID: 21300000, guid: f3649bd944bd4609bac1a8646814a990, type: 3}
   - {fileID: 21300000, guid: b365c82ee3bb4297abc4ecec2ca2c011, type: 3}
+  - {fileID: 21300000, guid: 2f1e34bd012c4d3dbe2f4f94918732ae, type: 3}
+  - {fileID: 21300000, guid: d6bc9ff37bd841f4b73e6a1394ff70f8, type: 3}
+  endingImage: {fileID: 21300000, guid: 68155b70682b4488b2f3b53f625b224a, type: 3}
   zombieWalkFrames:
   - {fileID: -855298285791758126, guid: a7d0dc88617cf4646beebc0810c74686, type: 3}
   - {fileID: 6937817954938267909, guid: 6fed31bbca29e8d4497ef060fc1419d7, type: 3}
