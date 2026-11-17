@@ -49,7 +49,6 @@ public sealed class DifficultyProfile
         }
     }
 
-    /// <summary>Le a dificuldade salva; chamado uma vez ao iniciar a cena.</summary>
     public static void Refresh()
     {
         Current = Get(GameProgress.Difficulty);

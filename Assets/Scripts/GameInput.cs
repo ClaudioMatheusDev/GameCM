@@ -1,7 +1,6 @@
 using System;
 using UnityEngine.InputSystem;
 
-/// <summary>Entrada do jogo (teclado e gamepad) montada em codigo, sem depender de asset na cena.</summary>
 public sealed class GameInput : IDisposable
 {
     private readonly InputAction move;

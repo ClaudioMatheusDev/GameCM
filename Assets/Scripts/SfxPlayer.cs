@@ -30,10 +30,6 @@ public class SoundBank
     public AudioClip pickup;
 }
 
-/// <summary>
-/// Toca efeitos sonoros curtos com um conjunto fixo de AudioSources.
-/// Os arquivos de efeito sao longos, entao cada som e cortado (com fade) apos uma duracao maxima.
-/// </summary>
 public class SfxPlayer : MonoBehaviour
 {
     private const int VoiceCount = 8;
@@ -69,7 +65,6 @@ public class SfxPlayer : MonoBehaviour
 
     public static SfxPlayer Instance { get; private set; }
 
-    /// <summary>Sons de selecao de UI ficam mudos ate este frame (evita som ao abrir uma tela).</summary>
     public static int UiMutedUntilFrame { get; set; }
 
     public static void Play(Sfx sfx)

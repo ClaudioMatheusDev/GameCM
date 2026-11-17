@@ -112,7 +112,6 @@ public static class BuildGameAssets
             .Where(texture => texture != null)
             .ToList()).ToList();
 
-        // Os quadros tem tamanhos diferentes (64 e 800 px); cada um e ajustado para caber na celula.
         int cellWidth = SpriteSheetCellSize;
         int cellHeight = SpriteSheetCellSize;
         int columns = rows.Max(row => row.Count);
@@ -487,7 +486,6 @@ public static class BuildGameAssets
 
     private static int PngWidth(string assetPath)
     {
-        // Largura gravada no cabecalho do PNG (4 bytes big-endian a partir do byte 16).
         byte[] header = new byte[24];
         using (FileStream stream = File.OpenRead(assetPath))
         {

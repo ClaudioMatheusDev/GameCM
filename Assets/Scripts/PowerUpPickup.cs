@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 
-/// <summary>Power-up temporario solto por zumbis: flutua, pisca antes de sumir e ativa o efeito ao toque.</summary>
 public class PowerUpPickup : MonoBehaviour
 {
     private const float Lifetime = 10f;

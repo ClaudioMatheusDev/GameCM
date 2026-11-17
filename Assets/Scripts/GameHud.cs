@@ -1,11 +1,9 @@
 using UnityEngine;
 
-/// <summary>HUD de jogo desenhado com IMGUI: vida, fase, zumbis restantes, pontuação, combo e tempo.</summary>
 public class GameHud : MonoBehaviour
 {
     private const float ReferenceHeight = 720f;
 
-    /// <summary>Guarda um texto e os valores que o geraram, para refazê-lo só quando mudam (sem lixo por frame).</summary>
     private sealed class CachedText
     {
         private int keyA = int.MinValue;
@@ -210,7 +208,6 @@ public class GameHud : MonoBehaviour
             return "Poder: pronto";
         }
 
-        // O texto só é refeito quando o décimo de segundo muda.
         int tenths = Mathf.CeilToInt(remaining * 10f);
         if (powerText.Changed(tenths))
         {

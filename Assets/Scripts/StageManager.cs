@@ -37,7 +37,6 @@ public class StageSettings
     public float intermissionSeconds = 3f;
 }
 
-/// <summary>Controla fases ou ondas, fundos, geracao (com pool) de zumbis, itens e o estado geral da partida.</summary>
 public class StageManager : MonoBehaviour
 {
     private const float EdgeTolerance = 0.05f;
@@ -85,7 +84,6 @@ public class StageManager : MonoBehaviour
     public ScreenFader Fader { get; set; }
     public GameState State { get; private set; } = GameState.Playing;
 
-    /// <summary>Indice da fase (campanha) ou da onda (modo infinito), sempre a partir de 0.</summary>
     public int StageIndex { get; private set; }
 
     public int StageCount => backgrounds != null ? backgrounds.Length : 0;
@@ -328,7 +326,6 @@ public class StageManager : MonoBehaviour
         }
     }
 
-    /// <summary>Os pivos dos sprites diferem; alinha os pes do zumbi aos do jogador para nao parecerem em alturas diferentes.</summary>
     private void AlignFeetToGround(ZombieController zombie)
     {
         Bounds bounds = zombie.GetComponent<SpriteRenderer>().bounds;
@@ -343,7 +340,6 @@ public class StageManager : MonoBehaviour
         GameObject zombieObject = new GameObject("Zombie");
         SpriteRenderer zombieRenderer = zombieObject.AddComponent<SpriteRenderer>();
         zombieRenderer.sortingLayerID = playerRenderer.sortingLayerID;
-        // Ordens distintas evitam que zumbis sobrepostos pisquem um sobre o outro.
         zombieRenderer.sortingOrder = playerRenderer.sortingOrder + 1 + Mathf.Min(zombiesCreated, MaxZombieSortingOffset);
         zombiesCreated++;
 
@@ -359,7 +355,6 @@ public class StageManager : MonoBehaviour
         float low = startX + settings.spawnMargin;
         float high = endX - settings.spawnMargin;
 
-        // Com rolagem, os zumbis entram pelas bordas da tela (fora da visao) e vao ate o jogador.
         if (settings.scrolling && CameraRig.Instance != null)
         {
             float edge = CameraRig.Instance.HalfWidth + settings.offscreenSpawnMargin;
@@ -431,7 +426,6 @@ public class StageManager : MonoBehaviour
         int layer = playerRenderer.sortingLayerID;
         int order = playerRenderer.sortingOrder - 1;
 
-        // Com pouca vida a chance de cura dobra.
         float healChance = variant.DropChance * (player.Health.Current <= LowHealthThreshold ? 2f : 1f);
         if (variant.DropChance > 0f && UnityEngine.Random.value < healChance)
         {
@@ -507,7 +501,6 @@ public class StageManager : MonoBehaviour
         float targetHeight = stageCamera.orthographicSize * 2f * settings.backgroundZoom;
         float scale = targetHeight / sprite.bounds.size.y;
 
-        // Cenario com rolagem: cobre toda a area visivel pela camera; senao, so a largura da tela.
         float coverMin;
         float coverMax;
         if (settings.scrolling)

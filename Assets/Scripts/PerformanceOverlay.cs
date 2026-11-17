@@ -2,7 +2,6 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>Medidor de desempenho (F3): FPS, tempo medio e pior quadro, coletas de lixo e escala de tempo.</summary>
 public class PerformanceOverlay : MonoBehaviour
 {
     private const float WindowSeconds = 0.5f;
@@ -44,7 +43,6 @@ public class PerformanceOverlay : MonoBehaviour
             + "  |  medio " + (average * 1000f).ToString("0.0") + " ms"
             + "  |  pior " + (worstFrame * 1000f).ToString("0.0") + " ms"
             + "  |  GC +" + (gcCount - lastGcCount)
-            + "  |  VSync " + QualitySettings.vSyncCount
             + "  |  tempo x" + Time.timeScale.ToString("0.00");
 
         lastGcCount = gcCount;

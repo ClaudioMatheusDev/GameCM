@@ -7,14 +7,12 @@ public enum PowerUpType
     Shield
 }
 
-/// <summary>Tempo restante dos power-ups ativos (logica pura, sem dependencia de cena).</summary>
 public sealed class PowerUpState
 {
     public const int TypeCount = 3;
 
     private readonly float[] remaining = new float[TypeCount];
 
-    /// <summary>Ativa o power-up; pegar o mesmo de novo reinicia a duracao (nao soma).</summary>
     public void Activate(PowerUpType type, float seconds)
     {
         int index = (int)type;

@@ -1,6 +1,5 @@
 using UnityEngine;
 
-/// <summary>Acompanha pontuacao, combo, tempo e estrelas da partida.</summary>
 public class ScoreTracker : MonoBehaviour
 {
     private const float BossParBonusSeconds = 30f;
@@ -87,7 +86,6 @@ public class ScoreTracker : MonoBehaviour
 
     private void OnStageCompleted(int stageIndex)
     {
-        // Modo infinito: cada onda vencida da bonus; nao ha estrelas nem fases a liberar.
         if (stage.IsEndless)
         {
             WavesCleared++;

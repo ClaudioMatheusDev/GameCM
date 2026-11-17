@@ -4,7 +4,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
-/// <summary>Cria elementos de uGUI em codigo para que as telas nao dependam de edicao na cena.</summary>
 public static class UiFactory
 {
     public static readonly Color OverlayColor = new Color(0.04f, 0.05f, 0.08f, 0.93f);
@@ -53,7 +52,6 @@ public static class UiFactory
         return canvas;
     }
 
-    /// <summary>Painel de tela cheia com os filhos empilhados e centralizados.</summary>
     public static RectTransform CreatePanel(Transform parent, string name, Color background, float spacing)
     {
         GameObject panel = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
@@ -158,7 +156,6 @@ public static class UiFactory
         return button;
     }
 
-    /// <summary>Linha horizontal para agrupar botoes e rotulos lado a lado.</summary>
     public static RectTransform CreateRow(Transform parent, float height)
     {
         GameObject row = new GameObject("Row", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
@@ -184,7 +181,6 @@ public static class UiFactory
     }
 }
 
-/// <summary>Toca o som de selecao ao navegar por teclado/gamepad ou passar o mouse sobre um botao.</summary>
 public class UiSelectSound : MonoBehaviour, ISelectHandler, IPointerEnterHandler
 {
     public void OnSelect(BaseEventData eventData)

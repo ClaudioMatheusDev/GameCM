@@ -8,10 +8,8 @@ public enum Fx
     BossDeath
 }
 
-/// <summary>Ponto unico para os efeitos de impacto (tremor de camera e hit-stop).</summary>
 public static class ImpactFx
 {
-    /// <summary>Lido de PlayerPrefs uma vez por partida e atualizado pelas opcoes.</summary>
     public static bool ScreenEffectsEnabled { get; set; } = true;
 
     public static void Play(Fx fx)

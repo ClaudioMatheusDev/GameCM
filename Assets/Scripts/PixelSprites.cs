@@ -1,6 +1,5 @@
 using UnityEngine;
 
-/// <summary>Sprites pixel art pequenos gerados em codigo (sem depender de arquivos de imagem).</summary>
 public static class PixelSprites
 {
     private const float PixelsPerUnit = 16f;
@@ -117,12 +116,10 @@ public static class PixelSprites
                     continue;
                 }
 
-                // Linha 0 do padrao fica no topo; a textura tem y = 0 embaixo.
                 pixels[(height - 2 - row) * width + column + 1] = fill;
             }
         }
 
-        // Brilho: um pixel mais claro perto do canto superior esquerdo da forma.
         Color shine = Color.Lerp(fill, Color.white, 0.6f);
         pixels[(height - 3) * width + 3] = pixels[(height - 3) * width + 3].a > 0f ? shine : pixels[(height - 3) * width + 3];
 

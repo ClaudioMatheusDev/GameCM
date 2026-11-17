@@ -105,6 +105,5 @@ InitTestScene*.unity*
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
-# Copias de recuperacao que a Unity cria quando o editor fecha inesperadamente
 /[Aa]ssets/_[Rr]ecovery/
 /[Aa]ssets/_[Rr]ecovery.meta

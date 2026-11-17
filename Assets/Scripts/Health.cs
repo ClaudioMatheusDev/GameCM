@@ -56,7 +56,6 @@ public class Health : MonoBehaviour
         return true;
     }
 
-    /// <summary>Recupera vida ate o maximo. Retorna false se nada foi curado (vida cheia, morto ou valor invalido).</summary>
     public bool Heal(int amount)
     {
         EnsureInitialized();

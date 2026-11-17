@@ -7,7 +7,6 @@ public enum GameMode
     Endless
 }
 
-/// <summary>Estado que sobrevive ao recarregamento da cena (fase inicial e se o menu deve aparecer).</summary>
 public static class GameSession
 {
     public static int StartStage { get; private set; }

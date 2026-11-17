@@ -8,7 +8,6 @@ public enum ZombieType
     Boss
 }
 
-/// <summary>Valores de cada tipo de zumbi, relativos ao <see cref="ZombieSettings"/> base.</summary>
 public sealed class ZombieVariant
 {
     public ZombieType Type;
@@ -86,10 +85,8 @@ public sealed class ZombieVariant
     }
 }
 
-/// <summary>Sorteio do tipo de zumbi por fase (o chefe nunca sai daqui; ele e gerado a parte).</summary>
 public static class ZombieSpawnTable
 {
-    /// <param name="roll">Valor sorteado entre 0 (inclusive) e 1 (exclusivo).</param>
     public static ZombieType Roll(int stageIndex, float roll)
     {
         float fast;

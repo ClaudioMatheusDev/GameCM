@@ -1,7 +1,5 @@
-# Normaliza finais de linha e marca binarios (evita avisos LF/CRLF e diffs ruidosos).
 * text=auto
 
-# Texto da Unity: sempre LF no repositorio.
 *.cs text eol=lf
 *.asmdef text eol=lf
 *.meta text eol=lf
@@ -11,7 +9,6 @@
 *.json text eol=lf
 *.md text eol=lf
 
-# Binarios
 *.png binary
 *.jpg binary
 *.mp3 binary

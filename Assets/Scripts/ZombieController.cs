@@ -133,7 +133,6 @@ public class ZombieController : MonoBehaviour
         gameObject.SetActive(true);
     }
 
-    /// <summary>Aplica um golpe do jogador. Retorna true se o dano foi aplicado.</summary>
     public bool ApplyHit(int damage, float knockbackSpeed)
     {
         if (!IsAlive)
@@ -268,7 +267,6 @@ public class ZombieController : MonoBehaviour
         bool inRange = Mathf.Abs(dx) <= AttackRange && Mathf.Abs(dy) <= settings.attackHeight;
         int damage = Mathf.Max(1, Mathf.RoundToInt(settings.contactDamage * variant.DamageMultiplier));
 
-        // Na investida do chefe o dano e imediato; nos demais ha um aviso (corpo amarelo) antes do golpe.
         if (instant)
         {
             if (attackTimer <= 0f && inRange && player.ReceiveHit(damage, position.x))
@@ -366,7 +364,6 @@ public class ZombieController : MonoBehaviour
 
         SfxPlayer.Play(Sfx.ZombieHurt);
 
-        // O chefe nao sofre atordoamento enquanto prepara ou executa a investida.
         if (state == State.Windup || state == State.Charging)
         {
             return;
