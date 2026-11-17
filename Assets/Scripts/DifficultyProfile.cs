@@ -6,8 +6,6 @@ public enum Difficulty
     Normal,
     Hard
 }
-
-/// <summary>Ajustes de dificuldade aplicados no inicio de cada partida.</summary>
 public sealed class DifficultyProfile
 {
     public string Label;
@@ -51,7 +49,6 @@ public sealed class DifficultyProfile
         }
     }
 
-    /// <summary>Le a dificuldade salva; chamado uma vez ao iniciar a cena.</summary>
     public static void Refresh()
     {
         Current = Get(GameProgress.Difficulty);

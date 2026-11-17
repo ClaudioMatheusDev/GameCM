@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 
-/// <summary>Item de cura solto por zumbis: flutua, pisca antes de sumir e cura o jogador ao toque.</summary>
 public class HealthPickup : MonoBehaviour
 {
     private const float Lifetime = 9f;
@@ -70,7 +69,6 @@ public class HealthPickup : MonoBehaviour
         bool close = Mathf.Abs(playerPosition.x - position.x) <= CollectRangeX
             && Mathf.Abs(player.AirHeight) <= CollectRangeY;
 
-        // Com a vida cheia o item fica no chao esperando.
         if (close && player.Health.Heal(healAmount))
         {
             SfxPlayer.Play(Sfx.Pickup);

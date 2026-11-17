@@ -5,10 +5,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-/// <summary>
-/// Cutscenes simples em uGUI: imagem em tela cheia, texto letra a letra e, no final, creditos subindo.
-/// Usa tempo real (funciona com o jogo pausado). Enter/Espaco/clique avancam; Esc/Start pulam tudo.
-/// </summary>
 public class CutscenePlayer : MonoBehaviour
 {
     private const float CharactersPerSecond = 38f;
@@ -57,7 +53,6 @@ public class CutscenePlayer : MonoBehaviour
         body.text = string.Empty;
         SetBlackout(1f);
 
-        // Ignora a tecla que abriu a cutscene.
         yield return null;
 
         for (int i = 0; i < slides.Count && !skipRequested; i++)
@@ -224,7 +219,6 @@ public class CutscenePlayer : MonoBehaviour
         Image backdropImage = backdrop.AddComponent<Image>();
         backdropImage.color = Color.black;
 
-        // A imagem cobre a tela inteira mantendo a proporcao (corta as sobras).
         GameObject pictureObject = CreateStretched(root, "Picture");
         picture = pictureObject.AddComponent<Image>();
         picture.raycastTarget = false;

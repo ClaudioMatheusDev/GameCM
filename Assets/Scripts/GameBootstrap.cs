@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Raiz da cena: guarda as referencias montadas pelo editor (fundos, sprites do zumbi, audio e efeitos)
-/// e liga os componentes de jogo: PlayerController, StageManager, ScoreTracker, GameHud e GameMenus.
-/// </summary>
 public class GameBootstrap : MonoBehaviour
 {
     [SerializeField] private Animator animator = null;

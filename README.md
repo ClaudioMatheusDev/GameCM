@@ -32,7 +32,7 @@ Abra o projeto na Unity, abra `Assets/Scenes/GameScene.unity` e aperte Play.
 
 **Controles configuraveis:** em Opcoes > Controles voce troca as teclas de esquerda, direita, pular, soco, poder e correr. Se a tecla ja estiver em uso, as duas acoes trocam de tecla. Esc fica reservado, e setas e gamepad continuam valendo.
 
-**Desempenho:** F3 mostra FPS, tempo de quadro, pior quadro e coletas de lixo. Em Opcoes ha o VSync (ligado por padrao).
+**Desempenho:** F3 mostra FPS, tempo de quadro, pior quadro e coletas de lixo.
 
 **Itens de cura:** zumbis podem soltar um coracao (mais chance nos resistentes e quando voce esta com pouca vida). Encoste para recuperar vida; com a vida cheia o item espera no chao e some depois de alguns segundos.
 

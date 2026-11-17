@@ -1,6 +1,5 @@
 using UnityEngine;
 
-/// <summary>Regras de pontuacao e estrelas, sem dependencia de cena (testavel).</summary>
 public static class ScoreCalculator
 {
     public const int BaseKillPoints = 100;
@@ -10,7 +9,6 @@ public static class ScoreCalculator
     public const int TimeBonusPerSecond = 10;
     public const int MaxStars = 3;
 
-    /// <summary>Pontos por zumbi morto; combo 1 e o primeiro abate sem levar dano.</summary>
     public static int KillPoints(int combo)
     {
         return BaseKillPoints + ComboStepPoints * Mathf.Clamp(combo - 1, 0, MaxComboSteps);
@@ -31,7 +29,6 @@ public static class ScoreCalculator
         return Mathf.Max(0, Mathf.RoundToInt((parSeconds - seconds) * TimeBonusPerSecond));
     }
 
-    /// <summary>1 estrela por concluir, +1 sem dano, +1 dentro do tempo-alvo.</summary>
     public static int Stars(int damageTaken, float seconds, float parSeconds)
     {
         return 1 + (damageTaken == 0 ? 1 : 0) + (seconds <= parSeconds ? 1 : 0);

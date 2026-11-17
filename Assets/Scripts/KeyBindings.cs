@@ -11,7 +11,6 @@ public enum BindAction
     Sprint
 }
 
-/// <summary>Teclas do teclado configuraveis (salvas em PlayerPrefs). Setas e gamepad continuam fixos.</summary>
 public static class KeyBindings
 {
     private const string KeyboardPrefix = "<Keyboard>/";
@@ -29,7 +28,6 @@ public static class KeyBindings
 
     private static string[] current;
 
-    /// <summary>Aumenta a cada mudanca; quem monta textos com as teclas usa para saber quando refazer.</summary>
     public static int Version { get; private set; }
 
     public static int Count => Defaults.Length;
@@ -45,13 +43,11 @@ public static class KeyBindings
         return Defaults[(int)action];
     }
 
-    /// <summary>Esc e reservado para voltar/pausar e nao pode ser atribuido.</summary>
     public static bool IsReserved(string path)
     {
         return string.Equals(path, ReservedPath, StringComparison.Ordinal);
     }
 
-    /// <summary>Atribui a tecla; se outra acao ja a usava, as duas trocam de tecla.</summary>
     public static void Set(BindAction action, string path)
     {
         if (string.IsNullOrEmpty(path) || IsReserved(path))
@@ -70,14 +66,12 @@ public static class KeyBindings
         Save();
     }
 
-    /// <summary>Forca a releitura das teclas salvas (usado quando o prefixo de chaves muda nos testes).</summary>
     public static void Reload()
     {
         current = null;
         Version++;
     }
 
-    /// <summary>Calcula as novas teclas sem tocar em PlayerPrefs (logica pura, testavel).</summary>
     public static string[] Assign(string[] bindings, BindAction action, string path)
     {
         string[] result = (string[])bindings.Clone();

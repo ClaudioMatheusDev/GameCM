@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 
-/// <summary>Ranking local das melhores pontuacoes (logica pura, sem PlayerPrefs).</summary>
 public static class ScoreBoard
 {
     public const int MaxEntries = 5;
@@ -34,7 +33,6 @@ public static class ScoreBoard
         return string.Join(",", scores);
     }
 
-    /// <summary>Insere a pontuacao; rank e a posicao (1 = melhor) ou 0 se nao entrou. Empates ficam abaixo.</summary>
     public static int[] Insert(int[] scores, int score, out int rank)
     {
         List<int> list = new List<int>(scores);

@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Particulas pixeladas emitidas por codigo em um unico ParticleSystem compartilhado.
-/// Todas as chamadas sao seguras mesmo sem a instancia na cena (nao fazem nada).
-/// </summary>
 public class ParticleFx : MonoBehaviour
 {
     private const int SortingOrder = 30;
@@ -37,7 +33,6 @@ public class ParticleFx : MonoBehaviour
         }
     }
 
-    /// <summary>Faiscas ao acertar um golpe; direction e o sentido do empurrao (-1 ou 1).</summary>
     public static void Hit(Vector3 position, float direction)
     {
         Emit(position, 6, Spark, Orange, 3f, 6f, 0.07f, 0.14f, 0.15f, 0.3f, DirectionAngle(direction), 55f);

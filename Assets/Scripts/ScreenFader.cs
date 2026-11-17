@@ -2,7 +2,6 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>Tela preta em tela cheia para transicoes (usa tempo real, funciona com o jogo pausado).</summary>
 public class ScreenFader : MonoBehaviour
 {
     private Image image;
@@ -55,7 +54,6 @@ public class ScreenFader : MonoBehaviour
         Color color = image.color;
         color.a = alpha;
         image.color = color;
-        // Transparente nao desenha nada: evita um quadro de tela cheia a cada frame.
         image.enabled = alpha > 0.001f;
     }
 }

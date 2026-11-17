@@ -79,7 +79,6 @@ public class PlayerController : MonoBehaviour
     private Vector3 FeetPosition => new Vector3(transform.position.x, spriteRenderer.bounds.min.y, transform.position.z);
     public float PowerCooldownRemaining => powerCooldownTimer;
 
-    /// <summary>Altura do jogador acima do chao (0 em solo, sobe durante o pulo).</summary>
     public float AirHeight => transform.position.y - groundY;
     public bool RestartPressed => input != null && input.RestartPressed;
     public bool BackPressed => input != null && input.BackPressed;
@@ -102,7 +101,6 @@ public class PlayerController : MonoBehaviour
         ApplyState("Idle");
     }
 
-    /// <summary>Recebe dano de um inimigo em sourceX. Retorna true se o dano foi aplicado.</summary>
     public bool ReceiveHit(int damage, float sourceX)
     {
         if (!configured || IsDead)
@@ -137,7 +135,6 @@ public class PlayerController : MonoBehaviour
         return true;
     }
 
-    /// <summary>Posiciona o personagem no inicio da fase, no chao.</summary>
     public void ResetToStageStart()
     {
         Vector3 position = transform.position;
@@ -247,7 +244,6 @@ public class PlayerController : MonoBehaviour
 
         if (attackTimer > 0f)
         {
-            // Apertar de novo depois do impacto do soco encadeia o proximo golpe do combo.
             if (!attackIsPower && attackHitDone && input.PunchPressed)
             {
                 punchQueued = true;
@@ -331,7 +327,6 @@ public class PlayerController : MonoBehaviour
         return sprinting ? "Run" : "Walk";
     }
 
-    /// <summary>Combo de tres socos; o terceiro e o finalizador (mais dano, alcance e empurrao).</summary>
     private void StartPunch()
     {
         punchQueued = false;
@@ -339,7 +334,6 @@ public class PlayerController : MonoBehaviour
         float duration = comboStep == 1 ? settings.punchDuration : settings.comboPunchDuration;
         StartAttack("Punch", duration, false);
 
-        // Reinicia a animacao do soco, que ja estava tocando no golpe anterior.
         if (comboStep > 1)
         {
             animator.Play("Punch", 0, 0f);
@@ -430,7 +424,6 @@ public class PlayerController : MonoBehaviour
         ParticleFx.PowerUpBurst(spriteRenderer.bounds.center, PowerUpState.Tint(type));
     }
 
-    /// <summary>Recria a entrada para aplicar teclas remapeadas.</summary>
     public void ReloadInput()
     {
         input?.Dispose();

@@ -1,11 +1,9 @@
 using UnityEngine;
 
-/// <summary>Progresso e preferencias salvos em PlayerPrefs.</summary>
 public static class GameProgress
 {
     private const string DefaultPrefix = "GameCM.";
 
-    /// <summary>Prefixo das chaves de PlayerPrefs; os testes trocam por outro para nao apagar o progresso real.</summary>
     public static string KeyPrefix { get; set; } = DefaultPrefix;
 
     private static string HighScoreKey => KeyPrefix + "HighScore";
@@ -13,25 +11,16 @@ public static class GameProgress
     private static string VolumeKey => KeyPrefix + "Volume";
     private static string FullscreenKey => KeyPrefix + "Fullscreen";
     private static string EffectsKey => KeyPrefix + "ScreenEffects";
-    private static string VSyncKey => KeyPrefix + "VSync";
     private static string DifficultyKey => KeyPrefix + "Difficulty";
     private static string TopScoresKey => KeyPrefix + "TopScores";
     private static string StarsKey(int stageIndex) => KeyPrefix + "Stars." + stageIndex;
 
     private const int MaxStageSlots = 16;
 
-    /// <summary>Tremor de camera e pausa curta nos golpes (acessibilidade).</summary>
     public static bool ScreenEffects
     {
         get => PlayerPrefs.GetInt(EffectsKey, 1) == 1;
         set => PlayerPrefs.SetInt(EffectsKey, value ? 1 : 0);
-    }
-
-    /// <summary>Sincronia vertical (liga por padrao: evita quadros irregulares e uso desnecessario da GPU).</summary>
-    public static bool VSync
-    {
-        get => PlayerPrefs.GetInt(VSyncKey, 1) == 1;
-        set => PlayerPrefs.SetInt(VSyncKey, value ? 1 : 0);
     }
 
     public static Difficulty Difficulty
@@ -57,7 +46,6 @@ public static class GameProgress
         return Mathf.Clamp(PlayerPrefs.GetInt(StarsKey(stageIndex), 0), 0, ScoreCalculator.MaxStars);
     }
 
-    /// <summary>Guarda as estrelas de uma fase se forem melhores que as ja salvas.</summary>
     public static void SubmitStageStars(int stageIndex, int stars)
     {
         if (stars > GetStageStars(stageIndex))
@@ -66,7 +54,6 @@ public static class GameProgress
         }
     }
 
-    /// <summary>Registra a pontuacao no ranking e devolve a posicao (1 = melhor, 0 = nao entrou).</summary>
     public static int RegisterScore(int score)
     {
         return RegisterScore(score, GameMode.Campaign);
@@ -90,7 +77,6 @@ public static class GameProgress
         set => PlayerPrefs.SetInt(HighScoreKey, Mathf.Max(0, value));
     }
 
-    /// <summary>Maior indice de fase liberado (0 = so a primeira).</summary>
     public static int UnlockedStage => Mathf.Max(0, PlayerPrefs.GetInt(UnlockedStageKey, 0));
 
     public static float Volume
@@ -115,7 +101,6 @@ public static class GameProgress
         }
     }
 
-    /// <summary>Registra a pontuacao e devolve true se for um novo recorde.</summary>
     public static bool SubmitScore(int score)
     {
         if (score <= HighScore)
@@ -139,7 +124,6 @@ public static class GameProgress
         PlayerPrefs.DeleteKey(VolumeKey);
         PlayerPrefs.DeleteKey(FullscreenKey);
         PlayerPrefs.DeleteKey(EffectsKey);
-        PlayerPrefs.DeleteKey(VSyncKey);
         PlayerPrefs.DeleteKey(DifficultyKey);
         PlayerPrefs.DeleteKey(TopScoresKey);
         PlayerPrefs.DeleteKey(TopScoresKey + ".Endless");

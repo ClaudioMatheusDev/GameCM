@@ -1,10 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Cobre um cenario largo repetindo o fundo lado a lado. Os blocos vizinhos sao espelhados,
-/// assim as bordas coincidem e nao aparece emenda. O fundo original da cena e o bloco central.
-/// </summary>
 public sealed class ScrollingBackground
 {
     private readonly SpriteRenderer main;
@@ -15,7 +11,6 @@ public sealed class ScrollingBackground
         main = mainRenderer;
     }
 
-    /// <summary>Quantos blocos extras sao precisos de cada lado para cobrir a distancia dada.</summary>
     public static int TilesNeeded(float coverDistance, float tileWidth)
     {
         if (tileWidth <= 0f)

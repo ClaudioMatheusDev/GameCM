@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Camera do jogo: segue o jogador com suavizacao (limitada ao cenario) e aplica o tremor de impacto.
-/// Usa tempo real, entao continua funcionando durante o hit-stop.
-/// </summary>
 [RequireComponent(typeof(Camera))]
 public class CameraRig : MonoBehaviour
 {
@@ -42,7 +38,6 @@ public class CameraRig : MonoBehaviour
         }
     }
 
-    /// <summary>Passa a seguir o alvo; a camera nunca mostra nada alem de [worldMinX, worldMaxX].</summary>
     public void Follow(Transform followTarget, float worldMinX, float worldMaxX)
     {
         target = followTarget;
@@ -52,7 +47,6 @@ public class CameraRig : MonoBehaviour
         Snap();
     }
 
-    /// <summary>Posiciona a camera no alvo imediatamente (sem suavizacao), por exemplo apos teleporte.</summary>
     public void Snap()
     {
         if (!following || target == null)

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>Um quadro de cutscene: imagem de fundo e texto que aparece letra a letra.</summary>
 public sealed class CutsceneSlide
 {
     public CutsceneSlide(Sprite image, string text)
@@ -14,7 +13,6 @@ public sealed class CutsceneSlide
     public string Text { get; }
 }
 
-/// <summary>Textos da historia (abertura, final e nomes das fases). Os indices seguem a ordem dos fundos.</summary>
 public static class Story
 {
     public const int StreetStage = 0;
@@ -70,7 +68,6 @@ public static class Story
     }
 }
 
-/// <summary>Regras de tempo das cutscenes (logica pura, testavel).</summary>
 public static class CutsceneTiming
 {
     public static int VisibleCharacters(float elapsedSeconds, float charactersPerSecond, int length)

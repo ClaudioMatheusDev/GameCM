@@ -1,6 +1,5 @@
 using UnityEngine;
 
-/// <summary>Congela o jogo por instantes ao acertar golpes. Nao interfere quando o jogo esta pausado.</summary>
 public class HitStop : MonoBehaviour
 {
     private const float FrozenScale = 0.02f;
@@ -26,7 +25,6 @@ public class HitStop : MonoBehaviour
 
     public void Freeze(float seconds)
     {
-        // So congela com o jogo rodando normalmente (nao durante pausa/menus).
         if (!active && !Mathf.Approximately(Time.timeScale, 1f))
         {
             return;
@@ -37,7 +35,6 @@ public class HitStop : MonoBehaviour
         Time.timeScale = FrozenScale;
     }
 
-    /// <summary>Devolve o tempo ao normal; chamado antes de pausar ou trocar de tela.</summary>
     public void Cancel()
     {
         if (active)

@@ -12,7 +12,6 @@ public class ScrollingBackgroundTests
     [Test]
     public void ExtraTilesCoverTheRemainingDistance()
     {
-        // Bloco de 30: o central cobre ate 15; mais um chega a 45; mais dois, a 75.
         Assert.AreEqual(1, ScrollingBackground.TilesNeeded(16f, 30f));
         Assert.AreEqual(1, ScrollingBackground.TilesNeeded(45f, 30f));
         Assert.AreEqual(2, ScrollingBackground.TilesNeeded(46f, 30f));
